@@ -1,10 +1,7 @@
 app/code/community/BL/CustomGrid app/code/community/BL/CustomGrid
-app/design/adminhtml/default/default/layout/bl app/design/adminhtml/default/default/layout/bl
-app/design/adminhtml/default/default/template/bl app/design/adminhtml/default/default/template/bl
+app/design/adminhtml/default/default/layout/bl/customgrid.xml app/design/adminhtml/default/default/layout/bl/customgrid.xml
+app/design/adminhtml/default/default/template/bl/customgrid app/design/adminhtml/default/default/template/bl/customgrid
 app/etc/modules/BL_CustomGrid.xml app/etc/modules/BL_CustomGrid.xml
 app/locale/fr_FR/BL_CustomGrid.csv app/locale/fr_FR/BL_CustomGrid.csv
-js/bl js/bl
-skin/adminhtml/default/default/bl skin/adminhtml/default/default/bl
-
-# Clear the cache
-@shell   rm -rf $PROJECT/var/cache/* && echo "Magento Cache cleared"
+js/bl/customgrid js/bl/customgrid
+skin/adminhtml/default/default/bl/customgrid skin/adminhtml/default/default/bl/customgrid
