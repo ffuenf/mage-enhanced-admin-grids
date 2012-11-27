@@ -62,7 +62,7 @@
             </thead>
             <tbody id="<?php echo $this->getHtmlId() ?>-table-rows">
             <?php $_i = 0; ?>
-            
+
             <?php
                 $_columns = $_gridModel->getSortedColumns(
                     true,
@@ -76,7 +76,7 @@
                 $_canDisplayEditablePart   = $this->canDisplayEditablePart();
                 $_canChooseEditableColumns = $this->canChooseEditableColumns();
             ?>
-            
+
             <?php foreach ($_columns as $_columnId => $_column): ?>
                 <?php
                     $_dbId   = $_column['column_id'];
@@ -88,16 +88,16 @@
                     $_isEditable     = (isset($_column['editable']) && is_array($_column['editable']));
                     $_isEditAllowed  = (bool) $_column['allow_edit'];
                     $_lockedValues   = $this->getColumnLockedValues($_columnId);
-                    
+
                     if ($_fromCustom && isset($_column['custom_column'])):
                         $_customColumn = $_column['custom_column'];
                     else:
                         $_customColumn = null;
                     endif;
-                    
+
                     $_hasCustomColumn = is_object($_customColumn);
                 ?>
-                
+
                 <tr id="<?php echo $_htmlId ?>-table-column-<?php echo $_dbId ?>" class="<?php echo $_htmlId ?>-table-column <?php echo (++$_i%2==0 ? 'even' : 'odd') ?>">
                     <?php if ($this->getUseDragNDrop()): ?>
                         <td class="blcg-drag-handle">
@@ -167,7 +167,7 @@
                                 else:
                                     $_lockedRenderer = (bool)strlen($_customColumn->getLockedRenderer());
                                     $_lockedLabel    = ($_lockedRenderer ? $_customColumn->getRendererLabel() : '');
-                                    $_rendererType   = ($_lockedRenderer ? $_customColumn->getLockedRenderer() : $_column['renderer_type']); 
+                                    $_rendererType   = ($_lockedRenderer ? $_customColumn->getLockedRenderer() : $_column['renderer_type']);
                                 endif;
                                 $_rendererParams = (!$_lockedRenderer || ($_rendererType == $_column['renderer_type']) ? $_column['renderer_params'] : '');
                             ?>
@@ -232,15 +232,15 @@
 <?php if ($_gridModel->canHaveAttributeColumns()): ?>
     var blcgAttributeSelectTemplate = '<input type="hidden" id="<?php echo $_htmlId ?>-renderer-params-{{id}}" name="config[{{id}}][renderer_params]" value="" />';
     blcgAttributeSelectTemplate += <?php echo $this->getAttributesSelectHtml('{{js_id}}', 'config[{{id}}][index]', $_htmlId.'-renderer-params-{{id}}', 'column-editable-infos-{{id}}', 'editable-checkbox-{{id}}', null, true) ?>;
-    
+
     var blcgAlignmentSelectTemplate = '<select name="config[{{id}}][align]" class="select validate-select">'
     <?php foreach ($_columnAlignments as $_value => $_label): ?>
     +'<option value="<?php echo $this->jsQuoteEscape($this->htmlEscape($_value)) ?>"><?php echo $this->jsQuoteEscape($this->htmlEscape($_label)) ?></option>'
     <?php endforeach ?>
     +'</select>';
-    
+
     var blcgStoreSelectTemplate = <?php echo $this->getStoreSelectHtml('config[{{id}}][store_id]', null, true) ?>;
-    
+
     <?php echo $this->getJsObjectName() ?> = new blcg.Grid.Config('<?php echo $_htmlId ?>', '<?php echo $this->getSaveUrl() ?>', '<?php echo $_htmlId ?>-table-column', '<?php echo $_htmlId ?>-column-order-{{id}}', '<?php echo $_htmlId ?>-table-column-{{id}}', ['<?php echo $_htmlId ?>-table-column'],
     [
         <?php if ($this->getUseDragNDrop()): ?>{template: '&nbsp;', classNames: ['blcg-drag-handle']},<?php endif ?>
@@ -261,15 +261,15 @@
         {template: '<?php echo $this->jsQuoteEscape($this->__('No')) ?>', classNames: ['a-center']},
         {template: '<a href="#" onclick="<?php echo $this->getJsObjectName() ?>.deleteColumn({{id}}); return false;"><?php echo $this->jsQuoteEscape($this->__('Delete')) ?></a>'}
     ], {
-        errorText: '<?php echo $this->jsQuoteEscape($this->getErrorText()) ?>', 
-        maxOrder: <?php echo ($this->getUseDragNDrop() ? $_maxDndOrder : $_gridModel->getMaxOrder()) ?>, 
-        orderPitch: <?php echo $_gridModel->getOrderPitch() ?>, 
+        errorText: '<?php echo $this->jsQuoteEscape($this->getErrorText()) ?>',
+        maxOrder: <?php echo ($this->getUseDragNDrop() ? $_maxDndOrder : $_gridModel->getMaxOrder()) ?>,
+        orderPitch: <?php echo $_gridModel->getOrderPitch() ?>,
         useDnd: <?php if ($this->getUseDragNDrop()): ?>true<?php else: ?>false<?php endif ?>
     });
 <?php else: ?>
     <?php echo $this->getJsObjectName() ?> = new blcg.Grid.Config('<?php echo $_htmlId ?>',  '<?php echo $this->getSaveUrl() ?>', '<?php echo $_htmlId ?>-table-column',  '<?php echo $_htmlId ?>-column-order-{{id}}', '<?php echo $_htmlId ?>-table-column-{{id}}', [], [], {
-        errorText: '<?php echo $this->jsQuoteEscape($this->getErrorText()) ?>', 
-        maxOrder: <?php echo ($this->getUseDragNDrop() ? $_maxDndOrder : $_gridModel->getMaxOrder()) ?>, 
+        errorText: '<?php echo $this->jsQuoteEscape($this->getErrorText()) ?>',
+        maxOrder: <?php echo ($this->getUseDragNDrop() ? $_maxDndOrder : $_gridModel->getMaxOrder()) ?>,
         orderPitch: <?php echo $_gridModel->getOrderPitch() ?>,
         useDnd: <?php if ($this->getUseDragNDrop()): ?>true<?php else: ?>false<?php endif ?>
     });
