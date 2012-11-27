@@ -43,7 +43,7 @@ if (typeof(blcg) == 'undefined') {
 
 blcg.Tools = {
     windowsNumber: 0,
-    
+
     onAjaxSuccess: function(transport)
     {
         if (transport.responseText.isJSON()) {
@@ -55,17 +55,17 @@ blcg.Tools = {
             }
         }
     },
-    
+
     _openDialog: function(windowConfig, otherWindow)
     {
         if (!otherWindow && $('blcg_window') && (typeof(Windows) != 'undefined')) {
             Windows.focus('blcg_window');
             return;
         }
-        
+
         var windowId  = 'blcg_window' + (otherWindow ? '_'+(++this.windowsNumber) : ''),
             windowUrl = windowConfig.url;
-        
+
         windowConfig = Object.extend({
             draggable: false,
             resizable: false,
@@ -81,8 +81,8 @@ blcg.Tools = {
             showEffect: Element.show,
             id: windowId,
             onClose: this.closeDialog.bind(this)
-        }, windowConfig || {}); 
-        
+        }, windowConfig || {});
+
         if (windowConfig.resizable) {
             windowConfig.windowClassName += ' blcg-resizable-popup-window';
         }
@@ -90,9 +90,9 @@ blcg.Tools = {
             // Dialog.info() doesn't care about url parameter, then always uses innerHTML even when it shouldn't
             windowConfig.url = '';
         }
-        
+
         var dialogWindow = Dialog.info(null, windowConfig);
-        
+
         if (windowUrl) {
             // We can safely set URL now, the Dialog class will not interfere anymore
             dialogWindow.setURL(windowUrl);
@@ -104,13 +104,13 @@ blcg.Tools = {
             return dialogWindow;
         }
     },
-    
+
     openDialogFromUrl: function(url, windowConfig)
     {
         this._openDialog(windowConfig);
         new Ajax.Updater('modal_dialog_message', url, {evalScripts: true});
     },
-    
+
     openDialogFromPost: function(url, data, windowConfig)
     {
         this._openDialog(windowConfig);
@@ -120,19 +120,19 @@ blcg.Tools = {
             evalScripts: true
         });
     },
-    
+
     openDialogFromElement: function(elementId, windowConfig)
     {
         this._openDialog(windowConfig);
         $('modal_dialog_message').update($(elementId).innerHTML);
     },
-    
+
     openIframeDialog: function(iframeUrl, windowConfig, otherWindow)
     {
         windowConfig.url = iframeUrl;
         return this._openDialog(windowConfig, otherWindow);
     },
-    
+
     closeDialog: function(window)
     {
         if (!window) {
@@ -143,20 +143,20 @@ blcg.Tools = {
             window.close();
         }
     },
-    
+
     execNodeJS: function(node)
     {
         var safari  = (navigator.userAgent.indexOf('Safari') != -1);
         var opera   = (navigator.userAgent.indexOf('Opera') != -1);
         var mozilla = (navigator.appName == 'Netscape');
-        
+
         if (!node) {
             return;
         }
-        
+
         var st = node.getElementsByTagName('SCRIPT');
         var strExec;
-        
+
         for(var i=0; i<st.length; i++) {
             if (safari) {
                 strExec = st[i].innerHTML;
@@ -171,38 +171,38 @@ blcg.Tools = {
                 strExec = st[i].text;
                 st[i].text = '';
             }
-            
+
             try {
                 var x  = document.createElement('script');
                 x.type = 'text/javascript';
-                
+
                 if (safari || opera || mozilla) {
                     x.innerHTML = strExec;
                 } else {
                     x.text = strExec;
                 }
-                
+
                 document.getElementsByTagName('head')[0].appendChild(x);
             } catch(e) {
                 return;
             }
         }
     },
-    
+
     submitContainerValues: function(container, url, additional, method)
     {
         container = $(container);
         if (!container) {
             return false;
         }
-        
+
         var elements = [];
         var valid = true;
-        
+
         container.getElementsBySelector('input, select').each(function(input){
             var isInput = (input.tagName.toUpperCase() == 'INPUT');
             var isCheckbox = (isInput && (input.readAttribute('type').toUpperCase() == 'CHECKBOX'));
-            
+
             if (!input.disabled && (!isCheckbox || input.checked)) {
                 elements.push(input);
                 if (!Validation.validate(input)) {
@@ -210,7 +210,7 @@ blcg.Tools = {
                 }
             }
         });
-        
+
         if (valid) {
             var form = $(document.createElement('form'));
             form.writeAttribute({
@@ -218,7 +218,7 @@ blcg.Tools = {
                 'method': ((method == 'GET') || (method == 'POST') ? method : 'POST')
             });
             document.body.appendChild(form);
-            
+
             $A(elements).each(function(element){
                 var input = $(document.createElement('input'));
                 input.writeAttribute({
@@ -228,7 +228,7 @@ blcg.Tools = {
                 });
                 form.appendChild(input);
             });
-            
+
             additional = $H(additional || {});
             additional.each(function(option){
                 var input = $(document.createElement('input'));
@@ -239,14 +239,14 @@ blcg.Tools = {
                 });
                 form.appendChild(input);
             });
-            
+
             form.submit();
             return true;
         } else {
             return false;
         }
     },
-    
+
     checkContainerCheckboxes: function(containerId, checked)
     {
         $(containerId).getElementsBySelector('input[type=checkbox]').each(function(cb){
@@ -287,20 +287,20 @@ blcg.Tooltip.prototype = {
             zIndex: 1000,
             moving: false
         }, arguments[2] || {});
-       
+
         this.element = $(element);
         this.options = options;
-        
+
         if ($(tooltip)) {
             this.tooltip = $(tooltip);
         } else {
-            this.tooltip = $(document.createElement('div')); 
+            this.tooltip = $(document.createElement('div'));
             this.tooltip.appendChild(document.createTextNode(tooltip));
         }
         this.tooltip.addClassName('blcg-tooltip');
         document.body.appendChild(this.tooltip);
         this.tooltip.hide();
-        
+
         this.eventMouseOver = this.showTooltip.bindAsEventListener(this);
         this.eventMouseOut  = this.hideTooltip.bindAsEventListener(this);
         if (this.options.moving) {
@@ -308,7 +308,7 @@ blcg.Tooltip.prototype = {
         }
         this.registerEvents();
     },
-    
+
     destroy: function()
     {
         Event.stopObserving(this.element, 'mouseover', this.eventMouseOver);
@@ -317,7 +317,7 @@ blcg.Tooltip.prototype = {
             Event.stopObserving(this.element, 'mousemove', this.eventMouseMove);
         }
     },
-    
+
     registerEvents: function()
     {
         Event.observe(this.element, 'mouseover', this.eventMouseOver);
@@ -326,18 +326,18 @@ blcg.Tooltip.prototype = {
             Event.observe(this.element, 'mousemove', this.eventMouseMove);
         }
     },
-    
+
     moveTooltip: function(event)
     {
         Event.stop(event);
         var mouseX = Event.pointerX(event);
         var mouseY = Event.pointerY(event);
-        
+
         var dimensions = Element.getDimensions(this.tooltip);
         var elmWidth   = dimensions.width;
         var elmHeight  = dimensions.height;
         var winScroll  = this.getWindowScrolls();
-        
+
         if ((elmWidth + mouseX - winScroll.left) >= (this.getWindowWidth() - this.options.xMinDist)) {
             mouseX -= elmWidth + this.options.xMinDist;
         } else {
@@ -347,18 +347,18 @@ blcg.Tooltip.prototype = {
             mouseY -= elmHeight + this.options.yMinDist;
         } else {
             mouseY += this.options.yMinDist;
-        } 
-        
+        }
+
         this.setStyles(mouseX, mouseY);
     },
-    
+
     showTooltip: function(event)
     {
         Event.stop(event);
         this.moveTooltip(event);
         new Element.show(this.tooltip);
     },
-    
+
     setStyles: function(x, y)
     {
         Element.setStyle(this.tooltip, {
@@ -376,22 +376,22 @@ blcg.Tooltip.prototype = {
             });
         }
     },
-    
+
     hideTooltip: function(event)
     {
         Element.hide(this.tooltip);
     },
-    
+
     getWindowHeight: function()
     {
-        return document.viewport.getHeight();	
+        return document.viewport.getHeight();
     },
-    
+
     getWindowWidth: function()
     {
-        return document.viewport.getWidth();	
+        return document.viewport.getWidth();
     },
-        
+
     getWindowScrolls: function()
     {
         return document.viewport.getScrollOffsets();
@@ -406,24 +406,24 @@ blcg.Config.prototype = {
         this.optionValues = new Hash({});
         this.rendererTargetId = rendererTargetId;
     },
-    
+
     insertParams: function()
     {
         var rendererOptionsForm = new varienForm(this.formEl);
-        
+
         if (!rendererOptionsForm.validator
             || (rendererOptionsForm.validator
                 && rendererOptionsForm.validator.validate())) {
             var formElements = [];
             var i = 0;
-            
+
             Form.getElements($(this.formEl)).each(function(e) {
                 if(!e.hasClassName('skip-submit')) {
                     formElements[i] = e;
                     i++;
                 }
             });
-            
+
             new Ajax.Request($(this.formEl).action, {
                 parameters: Form.serializeElements(formElements),
                 onComplete: function(transport){
@@ -435,13 +435,13 @@ blcg.Config.prototype = {
                     }
                 }.bind(this)
             });
-            
+
             blcg.Tools.closeDialog();
         }
     },
-    
+
     updateContent: function(content)
-    {   
+    {
         var target = $(this.rendererTargetId);
         target.value = content;
     }
@@ -462,17 +462,17 @@ blcg.Renderer.Select.prototype = {
         this.configButton = $(configButtonId);
         this.renderersParams = $H({});
         this.rendererTargetId = rendererTargetId;
-        
+
         if (this.configButton) {
             this.configButton.hide();
         }
-        
+
         this.initRenderersConfig(renderersConfig);
         this.initStartValue();
         this.initValueEvents();
         this.onValueChange();
     },
-    
+
     initRenderersConfig: function(renderersConfig)
     {
         this.renderersConfig = $H({});
@@ -485,9 +485,9 @@ blcg.Renderer.Select.prototype = {
             }
         }.bind(this));
     },
-    
+
     initStartValue: function()
-    {    
+    {
         var code = $F(this.select);
         if (code && this.renderersConfig[code]) {
             this.currentRenderer = code;
@@ -497,26 +497,26 @@ blcg.Renderer.Select.prototype = {
             $(this.rendererTargetId).value = '';
         }
     },
-    
+
     initValueEvents: function()
     {
         if (this.select && (this.select.tagName.toUpperCase() == 'SELECT')) {
             this.select.observe('change', this.onValueChange.bind(this));
         }
     },
-    
+
     bindConfigButton: function(buttonId)
     {
         this.configButton = $(buttonId);
         this.onValueChange();
     },
-    
+
     enableConfigButton: function(code, url, windowConfig)
-    {   
+    {
         if (this.configButton) {
             this.configButton.show();
             this.configButton.stopObserving('click');
-            this.configButton.observe('click', function(){ 
+            this.configButton.observe('click', function(){
                 blcg.Tools.openDialogFromPost(url, {
                   'code': code,
                   'renderer_target_id': this.rendererTargetId,
@@ -525,7 +525,7 @@ blcg.Renderer.Select.prototype = {
             }.bind(this));
         }
     },
-    
+
     disableConfigButton: function()
     {
         if (this.configButton) {
@@ -533,14 +533,14 @@ blcg.Renderer.Select.prototype = {
             this.configButton.hide();
         }
     },
-    
+
     onValueChange: function()
     {
         var code = $F(this.select);
-        
+
         if (code && this.renderersConfig[code]) {
             var renderer = this.renderersConfig[code];
-            
+
             if (renderer.isCustomizable) {
                if (this.currentRenderer) {
                     this.renderersParams[this.currentRenderer] = $F(this.rendererTargetId);
@@ -554,7 +554,7 @@ blcg.Renderer.Select.prototype = {
             } else {
                 this.disableConfigButton();
             }
-            
+
             this.currentRenderer = code;
         } else {
             if (this.currentRenderer) {
@@ -581,7 +581,7 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
         this.initAttributesConfig(attributesConfig);
         this.initEditableConfig(editableConfig);
         $super(select, renderersConfig, configButtonId, rendererTargetId, configUrl);
-            
+
         var code = $F(this.select);
         if (code && this.attributesConfig[code]) {
             this.currentAttribute = code;
@@ -591,7 +591,7 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
             $(this.rendererTargetId).value = '';
         }
     },
-    
+
     initAttributesConfig: function(attributesConfig)
     {
         this.attributesConfig = $H({});
@@ -605,7 +605,7 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
             }
         }.bind(this));
     },
-    
+
     initEditableConfig: function(editableConfig)
     {
         this.editableConfig = Object.extend({
@@ -615,7 +615,7 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
             'noMessageText': ''
         }, editableConfig);
     },
-    
+
     initStartValue: function()
     {
         var code = $F(this.select);
@@ -627,15 +627,15 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
             $(this.rendererTargetId).value = '';
         }
     },
-    
+
     updateEditableConfig: function(code)
     {
         var isEditable = false;
-        
+
         if (this.currentAttribute) {
             isEditable = this.attributesConfig[this.currentAttribute].editableValues;
         }
-        
+
         if (this.editableConfig.editableContainerId) {
             var container = $(this.editableConfig.editableContainerId);
             if (container) {
@@ -651,15 +651,15 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
             }
         }
     },
-    
+
     onValueChange: function()
     {
         var code = $F(this.select);
-        
+
         if (code && this.attributesConfig[code]) {
             var attribute = this.attributesConfig[code];
             var renderer  = (attribute.rendererCode ? this.renderersConfig[attribute.rendererCode] : null);
-            
+
             if (renderer && renderer.isCustomizable) {
                if (this.currentAttribute) {
                     this.renderersParams[this.currentAttribute] = $F(this.rendererTargetId);
@@ -668,12 +668,12 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
                     $(this.rendererTargetId).value = this.renderersParams[code];
                 } else {
                     $(this.rendererTargetId).value = '';
-                } 
+                }
                 this.enableConfigButton(renderer.code, this.configUrl, renderer.windowConfig);
             } else {
                 this.disableConfigButton();
             }
-            
+
             this.currentAttribute = code;
         } else {
             if (this.currentAttribute) {
@@ -683,7 +683,7 @@ blcg.Renderer.Attribute.Select = Class.create(blcg.Renderer.Select, {
             this.disableConfigButton();
             this.currentAttribute = '';
         }
-        
+
         this.updateEditableConfig();
     }
 });
@@ -703,12 +703,12 @@ blcg.Form.Element.DependenceController.prototype = {
         this.idsStates = $H({});
         // Inverted elements map
         this.invertedMap = $A({});
-        
+
         this.elementsMap = elementsMap;
         this._config = Object.extend({
             levels_up: 1 // How many levels up to travel when toggling element
         }, config || {});
-        
+
         for (var idTo in elementsMap) {
             this.idsStates[idTo] = true;
             for (var idFrom in elementsMap[idTo]) {
@@ -722,11 +722,11 @@ blcg.Form.Element.DependenceController.prototype = {
             }
         }
     },
-    
+
     trackChange : function(e, idTo)
     {
         var valuesFrom = this.elementsMap[idTo];
-        
+
         // Define whether the target should show up
         var shouldShowUp = true;
         for (var idFrom in valuesFrom) {
@@ -753,7 +753,7 @@ blcg.Form.Element.DependenceController.prototype = {
             $(idTo).up(this._config.levels_up).hide();
             this.idsStates[idTo] = false;
         }
-        
+
         // Apply chaining
         if (this.invertedMap[idTo]) {
             this.invertedMap[idTo].each(function(subIdTo){
@@ -785,7 +785,7 @@ blcg.TableDnd.prototype = {
         this.mouseOffset = null,
         // Remember the old value of Y so that we don't do too much processing
         this.oldY = 0,
-        
+
         // DnD config values
         this.tableDndConfig = Object.extend({
             onDragStyle: null,
@@ -797,17 +797,17 @@ blcg.TableDnd.prototype = {
             scrollAmount: 5,
             dragHandle: null
         }, options || {});
-        
+
         this.makeDraggable(table);
-        
+
         Event.observe(document, 'mousemove', function(event){ this.onMouseMove(event); }.bind(this));
         Event.observe(document, 'mouseup', function(event){ this.onMouseUp(event); }.bind(this));
     },
-    
+
     makeDraggable: function(table)
     {
         var table = $(table);
-        
+
         if (this.tableDndConfig.dragHandle) {
             // We only need to add the event to the specified cells
             var cells = table.getElementsBySelector('td.' + this.tableDndConfig.dragHandle);
@@ -817,6 +817,7 @@ blcg.TableDnd.prototype = {
                     this.currentTable = table;
                     this.mouseOffset  = this.getMouseOffset(cell, event);
                     if (this.tableDndConfig.onDragStart) {
+                        event.preventDefault();
                         // Call the onDrop method if there is one
                         this.tableDndConfig.onDragStart(table, cell);
                     }
@@ -834,6 +835,7 @@ blcg.TableDnd.prototype = {
                             this.currentTable = table;
                             this.mouseOffset  = this.getMouseOffset(row, event);
                             if (this.tableDndConfig.onDragStart) {
+                                event.preventDefault();
                                 // Call the onDrop method if there is one
                                 this.tableDndConfig.onDragStart(table, row);
                             }
@@ -844,12 +846,12 @@ blcg.TableDnd.prototype = {
             }.bind(this));
         }
     },
-    
+
     registerNewRow: function(row)
     {
         var row   = $(row);
         var table = row.up('table');
-        
+
         if (this.tableDndConfig.dragHandle) {
             // We only need to add the event to the specified cells
             var cells = row.getElementsBySelector('td.' + this.tableDndConfig.dragHandle);
@@ -859,6 +861,7 @@ blcg.TableDnd.prototype = {
                     this.currentTable = table;
                     this.mouseOffset  = this.getMouseOffset(cell, event);
                     if (this.tableDndConfig.onDragStart) {
+                        event.preventDefault();
                         // Call the onDrop method if there is one
                         this.tableDndConfig.onDragStart(table, cell);
                     }
@@ -874,6 +877,7 @@ blcg.TableDnd.prototype = {
                         this.currentTable = table;
                         this.mouseOffset  = this.getMouseOffset(row, event);
                         if (this.tableDndConfig.onDragStart) {
+                            event.preventDefault();
                             // Call the onDrop method if there is one
                             this.tableDndConfig.onDragStart(table, row);
                         }
@@ -883,12 +887,12 @@ blcg.TableDnd.prototype = {
             }
         }
     },
-    
+
     getMouseCoords: function(event)
     {
         return Event.pointer(event);
     },
-    
+
     getMouseOffset: function(target, event)
     {
         event = event || window.event;
@@ -896,39 +900,39 @@ blcg.TableDnd.prototype = {
         var mousePos = this.getMouseCoords(event);
         return {x: mousePos.x - docPos.x, y: mousePos.y - docPos.y};
     },
-    
+
     getPosition: function(event)
     {
         var left = 0;
         var top  = 0;
-        
+
         if (event.offsetHeight == 0) {
             event = event.firstChild;
         }
-        
+
         while (event.offsetParent) {
             left += event.offsetLeft;
             top  += event.offsetTop;
             event = event.offsetParent;
         }
-        
+
         left += event.offsetLeft;
         top  += event.offsetTop;
-        
+
         return {x: left, y: top};
     },
-    
+
     onMouseMove: function(event)
     {
         if (this.dragObject == null) {
             return;
         }
-        
+
         var dragObj  = $(this.dragObject);
         var config   = this.tableDndConfig;
         var mousePos = this.getMouseCoords(event);
         var y = mousePos.y - this.mouseOffset.y;
-        
+
         // Auto scroll the window
         var yOffset = window.pageYOffset;
         if (document.all) {
@@ -940,7 +944,7 @@ blcg.TableDnd.prototype = {
                 yOffset=document.body.scrollTop;
             }
         }
-        
+
         if (mousePos.y - yOffset < config.scrollAmount) {
             window.scrollBy(0, -config.scrollAmount);
         } else {
@@ -950,7 +954,7 @@ blcg.TableDnd.prototype = {
                 window.scrollBy(0, config.scrollAmount);
             }
         }
-        
+
         if (y != this.oldY) {
             // Update the old value
             this.oldY = y;
@@ -960,14 +964,14 @@ blcg.TableDnd.prototype = {
             } else if (config.onDragStyle) {
                 dragObj.setStyle(config.onDragStyle);
             }
-            
+
             // If we're over a row then move the dragged row to there so that the user sees the effect dynamically
             var currentRow = this.findDropTargetRow(dragObj, y);
             if (currentRow) {
                 // Work out if we're going up or down...
                 var movingDown = true;
                 var previousRow, observedRow = dragObj;
-                
+
                 while (previousRow = observedRow.previous('tr')) {
                     if (previousRow == currentRow) {
                         movingDown = false;
@@ -975,7 +979,7 @@ blcg.TableDnd.prototype = {
                     }
                     observedRow = previousRow;
                 }
-                
+
                 if (movingDown && (this.dragObject != currentRow)) {
                     this.dragObject.parentNode.insertBefore(this.dragObject, currentRow.nextSibling);
                     if (config.onExchange) {
@@ -989,10 +993,10 @@ blcg.TableDnd.prototype = {
                 }
             }
         }
-        
+
         return false;
     },
-    
+
     findDropTargetRow: function(draggedRow, y)
     {
         var rows = this.currentTable.rows;
@@ -1000,20 +1004,20 @@ blcg.TableDnd.prototype = {
             var row  = rows[i];
             var rowY = this.getPosition(row).y;
             var rowH = parseInt(row.offsetHeight) / 2;
-            
+
             if (row.offsetHeight == 0) {
                 rowY = this.getPosition(row.firstChild).y;
                 rowH = parseInt(row.firstChild.offsetHeight) / 2;
             }
-            
+
             // Because we always have to insert before, we need to offset the height a bit
-            if ((y > rowY - rowH) && (y < (rowY + rowH))) { 
+            if ((y > rowY - rowH) && (y < (rowY + rowH))) {
                 // That's the row we're over
                 // If it's the same as the current row, ignore it
                 if (row == draggedRow) {
                     return null;
                 }
-                
+
                 var config = this.tableDndConfig;
                 if (config.onAllowDrop) {
                     if (config.onAllowDrop(draggedRow, row)) {
@@ -1035,13 +1039,13 @@ blcg.TableDnd.prototype = {
         }
         return null;
     },
-    
+
     onMouseUp: function(event)
     {
         if (this.currentTable && this.dragObject) {
             var droppedRow = this.dragObject;
             var config = this.tableDndConfig;
-            
+
             // If we have a dragObject, then we need to release it
             // The row will already have been moved to the right place so we just reset stuff
             if (config.onDragClass) {
@@ -1049,7 +1053,7 @@ blcg.TableDnd.prototype = {
             } else if (config.onDropStyle) {
                 $(droppedRow).setStyle(config.onDropStyle);
             }
-            
+
             this.dragObject   = null;
             if (config.onDrop) {
                 // Call the onDrop method if there is one
@@ -1071,10 +1075,10 @@ blcg.Grid.Export.prototype = {
         this.containerId  = containerId;
         this.errorTexts   = $H(errorTexts || {});
         this.additional   = additional || {};
-        
+
         this.initElements();
     },
-    
+
     initElements: function()
     {
         this.container    = $(this.containerId);
@@ -1082,7 +1086,7 @@ blcg.Grid.Export.prototype = {
         this.sizeSelect   = $(this.containerId + '-size');
         this.customSizeInput = $(this.containerId + '-custom-size');
         this.fromResultInput = $(this.containerId + '-from-result');
-        
+
         this.customSizeInput.hide();
         this.customSizeInput.disabled = true;
         this.customSizeInput.observe('change', function(){
@@ -1091,7 +1095,7 @@ blcg.Grid.Export.prototype = {
         this.fromResultInput.observe('change', function(){
             this.verifyInput(this.fromResultInput, '1');
         }.bind(this));
-        
+
         this.sizeSelect.observe('change', function(){
             if ($F(this.sizeSelect) != '') {
                 this.customSizeInput.hide();
@@ -1102,7 +1106,7 @@ blcg.Grid.Export.prototype = {
             }
         }.bind(this));
     },
-    
+
     verifyInput: function(input, defaultValue)
     {
         var value = $F(input);
@@ -1113,7 +1117,7 @@ blcg.Grid.Export.prototype = {
             }
         }
     },
-    
+
     doExport: function()
     {
         if ($F(this.formatSelect) == '') {
@@ -1143,19 +1147,19 @@ blcg.Grid.Config.prototype = {
         this.orderInputs = $H({});
         this.checkedValues = $A({});
         this.nextId = 0;
-            
+
         this.containerId = containerId;
         this.saveUrl = saveUrl;
-        this.rowClassName = rowClassName; 
+        this.rowClassName = rowClassName;
         this.orderInputId = orderInputId;
         this.newRowId = newRowId;
         this.newRowClassNames = $A(newRowClassNames);
         this.newRowColumns = $A(newRowColumns);
-        
+
         for (var i=0, l=this.newRowColumns.length; i<l; ++i) {
             this.newRowColumns[i] = $H(this.newRowColumns[i]);
         }
-        
+
         this.config = Object.extend({
             idTemplate: '{{id}}',
             jsIdTemplate: '{{js_id}}',
@@ -1166,17 +1170,17 @@ blcg.Grid.Config.prototype = {
             useDnd: false
         }, config || {});
         this.config.originalMaxOrder = this.config.maxOrder;
-        
+
         this.config.idRegex = new RegExp(this.config.idTemplate, 'g');
         this.config.jsIdRegex = new RegExp(this.config.jsIdTemplate, 'g');
         this.config.orderRegex = new RegExp(this.config.orderTemplate, 'g');
-                
+
         this.initElements();
         this.initColumns();
         this.initCheckboxes();
         this.updateCount();
     },
-    
+
     makeTableUnselectable: function(unselectable)
     {
         this.rows.setStyle({
@@ -1184,7 +1188,7 @@ blcg.Grid.Config.prototype = {
             'KhtmlUserSelect': (unselectable ? 'none' : ''), // Safari, Chrome
             'userSelect': (unselectable ? 'none' : '') // CSS 3
         });
-        
+
         if (Prototype.Browser.IE) {
             // IE
             this.rows.ondrag = (unselectable ? function(){ return false; } : null)
@@ -1194,14 +1198,14 @@ blcg.Grid.Config.prototype = {
             this.rows.writeAttribute('unselectable', (unselectable ? 'on' : 'off'));
         }
     },
-    
+
     initElements: function()
     {
         this.container = $(this.containerId);
         this.table     = $(this.containerId + '-table');
         this.rows      = $(this.containerId + '-table-rows');
         this.count     = $(this.containerId + '-count');
-        
+
         if (this.config.useDnd) {
             // Drag'n'drop if needed
             this.tableDnd  = new blcg.TableDnd(this.table, {
@@ -1212,7 +1216,7 @@ blcg.Grid.Config.prototype = {
             });
         }
     },
-    
+
     getColumnIdFromRowId: function(rowId)
     {
         var regex  = new RegExp(this.newRowId.replace(this.config.idTemplate, '(-?[0-9]+)'));
@@ -1223,19 +1227,19 @@ blcg.Grid.Config.prototype = {
             return -1;
         }
     },
-    
+
     exchangeRows: function(from, to)
     {
         var from = this.columnsIds.indexOf(this.getColumnIdFromRowId(from.id));
         var to   = this.columnsIds.indexOf(this.getColumnIdFromRowId(to.id));
-        
+
         if ((from != -1) && (to != -1)) {
-            var add = (from > to ? -1 : 1); 
-            
+            var add = (from > to ? -1 : 1);
+
             for (i=from+add; (add>0 ? i<=to : i>=to); i+=add) {
                 var toId   = this.columnsIds[i];
                 var fromId = this.columnsIds[i-add];
-                
+
                 // Exchange decoration
                 if (i%2 == 0) {
                     this.columns[fromId].removeClassName('even').addClassName('odd');
@@ -1244,11 +1248,11 @@ blcg.Grid.Config.prototype = {
                     this.columns[fromId].removeClassName('odd').addClassName('even');
                     this.columns[toId].removeClassName('even').addClassName('odd');
                 }
-                
+
                 // Exchange position in IDs array
                 this.columnsIds[i] = fromId;
                 this.columnsIds[i-add] = toId;
-                
+
                 // Exchange orders values
                 buffer = this.orderInputs[fromId].getValue();
                 this.orderInputs[fromId].value = this.orderInputs[toId].value;
@@ -1256,18 +1260,18 @@ blcg.Grid.Config.prototype = {
             }
         }
     },
-    
+
     getNextNewColumnId: function()
     {
         return '' + --this.nextId;
     },
-    
+
     getNextNewColumnOrder: function()
     {
         this.config.maxOrder += this.config.orderPitch;
         return this.config.maxOrder;
     },
-    
+
     _parseRowTemplate: function(tpl, nextId, nextOrder)
     {
         tpl = tpl.replace(this.config.idRegex, nextId);
@@ -1275,23 +1279,23 @@ blcg.Grid.Config.prototype = {
         tpl = tpl.replace(this.config.orderRegex, nextOrder);
         return tpl;
     },
-    
+
     _addRowCell: function(row, template, cellId, nextId, nextOrder, classNames)
     {
         var cell = $(row.insertCell(-1));
         cell.innerHTML = this._parseRowTemplate(template, nextId, nextOrder);
         blcg.Tools.execNodeJS(cell);
-        
+
         if (cellId) {
             cell.id = this._parseRowTemplate(cellId, nextId, nextOrder);
         }
         for (var i=0, l=classNames.length; i<l; ++i) {
             cell.addClassName(classNames[i]);
         }
-        
+
         return cell;
-    },    
-    
+    },
+
     addColumn: function()
     {
         var nextId = this.getNextNewColumnId();
@@ -1304,10 +1308,10 @@ blcg.Grid.Config.prototype = {
         for (var i=0, l=this.newRowColumns.length; i<l; ++i) {
             this._addRowCell(row, this.newRowColumns[i].get('template'), this.newRowColumns[i].get('id'), nextId, nextOrder, $A(this.newRowColumns[i].get('classNames')));
         }
-        
+
         this.columns[nextId] = row;
         this.columnsIds.push(nextId);
-        
+
         row.getElementsBySelector('.visible-checkbox').each(function(cb){
             cb.observe('click', function(){
                 if (cb.checked) {
@@ -1317,26 +1321,26 @@ blcg.Grid.Config.prototype = {
                     if (i != -1) {
                         this.checkedValues.splice(i, 1);
                     }
-                } 
-                this.updateCount(); 
+                }
+                this.updateCount();
             }.bind(this));
-            
+
             this.checkboxes[nextId] = cb;
-            
+
             if (cb.checked) {
                 this.checkedValues.push(nextId);
             }
         }.bind(this));
         this.orderInputs[nextId] = $(this.orderInputId.replace(this.config.idRegex, nextId));
-        
+
         this.updateCount();
         this.redecorateColumns();
-        
+
         if (this.config.useDnd) {
             this.tableDnd.registerNewRow(row);
         }
     },
-    
+
     redecorateColumns: function()
     {
         var i = 0;
@@ -1348,7 +1352,7 @@ blcg.Grid.Config.prototype = {
             }
         }.bind(this));
     },
-    
+
     initColumns: function()
     {
         this.table.getElementsBySelector('.' + this.rowClassName).each(function(row){
@@ -1358,7 +1362,7 @@ blcg.Grid.Config.prototype = {
             this.columnsIds.push(columnId);
         }.bind(this));
     },
-    
+
     initCheckboxes: function()
     {
         this.columnsIds.each(function(columnId){
@@ -1372,25 +1376,25 @@ blcg.Grid.Config.prototype = {
                         if (i != -1) {
                             this.checkedValues.splice(i, 1);
                         }
-                    } 
-                    this.updateCount(); 
+                    }
+                    this.updateCount();
                 }.bind(this));
-                
+
                 this.checkboxes[columnId] = cb;
-                
+
                 if (cb.checked) {
                     this.checkedValues.push(columnId);
                 }
             }.bind(this));
         }.bind(this));
     },
-    
+
     updateCount: function()
     {
         this.checkedValues = this.checkedValues.uniq();
         this.count.update(this.checkedValues.size());
     },
-    
+
     selectAll: function()
     {
         this.columnsIds.each(function(columnId){ this.checkboxes[columnId].checked = true; }.bind(this));
@@ -1398,7 +1402,7 @@ blcg.Grid.Config.prototype = {
         this.updateCount();
         return false;
     },
-    
+
     unselectAll: function()
     {
         this.columnsIds.each(function(columnId){ this.checkboxes[columnId].checked = false; }.bind(this));
@@ -1406,7 +1410,7 @@ blcg.Grid.Config.prototype = {
         this.updateCount();
         return false;
     },
-    
+
     deleteColumn: function(columnId)
     {
         columnId = '' + columnId;
@@ -1424,7 +1428,7 @@ blcg.Grid.Config.prototype = {
             this.redecorateColumns();
         }
     },
-    
+
     saveGrid: function()
     {
         if (this.checkedValues.size() == 0) {
@@ -1450,16 +1454,16 @@ blcg.Grid.Editor.prototype = {
         this.errorMessages = $H(errorMessages);
         this.editWindow = null;
         this.isRequestRunning = false;
-        
+
         if ((!this.table)
-            || (this.cells.length == 0) 
+            || (this.cells.length == 0)
             || (this.rowsIds.length == 0)) {
             return false;
         }
-        
+
         this.initCells();
     },
-    
+
     initCells: function()
     {
         this.cellsRowNums  = $H({});
@@ -1467,7 +1471,7 @@ blcg.Grid.Editor.prototype = {
         this.editedCell    = null;
         this.previousValue = null;
         this.hasPreviousValue = false;
-        
+
         this.table.up().getElementsBySelector('#' + this.tableId + ' > tbody > tr').each(function(row, rowIndex){
             if (this.rowsIds[rowIndex]) {
                 row.childElements('td').each(function(cell, cellIndex){
@@ -1475,7 +1479,7 @@ blcg.Grid.Editor.prototype = {
                         var cellId = cell.identify();
                         this.cellsRowNums[cellId] = rowIndex;
                         this.cellsConfigs[cellId] = this.cells[cellIndex];
-                        
+
                         cell.observe('mouseover', function(){
                             this.onCellMouseOver(cell);
                         }.bind(this)).observe('mouseout', function(){
@@ -1485,18 +1489,18 @@ blcg.Grid.Editor.prototype = {
                 }.bind(this));
             }
         }.bind(this));
-        
+
         this.hoveredCell = null;
         this.mouseCell   = null;
         this.hoverStart  = null;
         this.hoverStop   = null;
     },
-    
+
     compareCells: function(cell1, cell2)
     {
         return (cell1 && cell2 ? cell1.identify() == cell2.identify() : false);
     },
-    
+
     createDiv: function(id, classNames)
     {
         var div = $(document.createElement('DIV'));
@@ -1510,16 +1514,16 @@ blcg.Grid.Editor.prototype = {
         }
         return div;
     },
-    
+
     getCellOverlayId: function(cell)
     {
         return 'blcg-column-editor-overlay-' + cell.identify();
     },
-    
+
     createCellOverlay: function(cell)
     {
         var overlay = this.createDiv(this.getCellOverlayId(cell), ['blcg-column-editor-overlay']);
-        
+
         overlay.setStyle({
             'display': 'none',
             'position': 'absolute'
@@ -1528,17 +1532,17 @@ blcg.Grid.Editor.prototype = {
         }.bind(this)).observe('mouseout', function(){
             this.onCellMouseOut(cell);
         }.bind(this));
-        
+
         document.body.appendChild(overlay);
         return overlay;
     },
-    
+
     getCellOverlay: function(cell)
     {
         var overlay = $(this.getCellOverlayId(cell));
-        return (overlay ? overlay : this.createCellOverlay(cell));       
+        return (overlay ? overlay : this.createCellOverlay(cell));
     },
-    
+
     positionCellOverlay: function(cell, overlay, mustShow)
     {
         overlay = (overlay ? overlay : this.getCellOverlay(cell));
@@ -1546,7 +1550,7 @@ blcg.Grid.Editor.prototype = {
             csOffset = cell.cumulativeScrollOffset(),
             width;
         offset.left -= csOffset.left;
-        
+
         if (!overlay.visible()) {
             overlay.show();
             width = overlay.getWidth();
@@ -1554,22 +1558,22 @@ blcg.Grid.Editor.prototype = {
         } else {
             width = overlay.getWidth();
         }
-        
+
         overlay.setStyle({
             'position': 'absolute',
             'top': (offset.top + 2) + 'px',
             'left': (offset.left + cell.getWidth() - width-3) + 'px'
         });
-        
+
         if (mustShow) {
             overlay.show();
         }
     },
-    
+
     fillCellOverlay: function(cell, overlay)
     {
         overlay = (overlay ? overlay : this.getCellOverlay(cell));
-        
+
         // @todo to make it (even) "cleaner", all those classes should be wrapped in a dedicated parameter
         if (cell.hasClassName('blcg-column-editor-editing')) {
             if (!overlay.hasClassName('blcg-column-editor-overlay-container-editing')) {
@@ -1592,20 +1596,20 @@ blcg.Grid.Editor.prototype = {
             overlay.addClassName('blcg-column-editor-overlay-container-idle');
         }
     },
-    
+
     showCellOverlay: function(cell, overlay)
     {
         overlay = (overlay ? overlay : this.getCellOverlay(cell));
         this.fillCellOverlay(cell, overlay);
         this.positionCellOverlay(cell, overlay, true);
     },
-    
+
     hideCellOverlay: function(cell, overlay)
     {
         overlay = (overlay ? overlay : this.getCellOverlay(cell));
         overlay.hide();
     },
-    
+
     stopHoverStart: function()
     {
         if (this.hoverStart) {
@@ -1613,7 +1617,7 @@ blcg.Grid.Editor.prototype = {
             this.hoverStart = null;
         }
     },
-    
+
     stopHoverEnd: function()
     {
         if (this.hoverEnd) {
@@ -1621,22 +1625,22 @@ blcg.Grid.Editor.prototype = {
             this.hoverEnd = null;
         }
     },
-    
+
     onCellMouseOver: function(cell)
     {
         this.mouseCell = cell;
-        
+
         if (!this.compareCells(this.mouseCell, this.hoveredCell)) {
             this.stopHoverStart();
-            
+
             this.hoverStart = window.setTimeout(function(){
                 this.hoverStart = null;
                 this.stopHoverEnd();
-                
+
                 if (this.hoveredCell) {
                     this.hideCellOverlay(this.hoveredCell);
                 }
-                
+
                 this.hoveredCell = cell;
                 this.showCellOverlay(cell);
             }.bind(this), 50);
@@ -1645,7 +1649,7 @@ blcg.Grid.Editor.prototype = {
             this.stopHoverEnd();
         }
     },
-    
+
     onCellMouseOut: function(cell)
     {
         if (this.compareCells(this.mouseCell, cell)) {
@@ -1654,7 +1658,7 @@ blcg.Grid.Editor.prototype = {
         }
         if (this.compareCells(this.hoveredCell, cell)) {
             this.stopHoverEnd();
-            
+
             this.hoverEnd = window.setTimeout(function(){
                 this.hoverEnd = null;
                 this.hideCellOverlay(this.hoveredCell);
@@ -1662,55 +1666,55 @@ blcg.Grid.Editor.prototype = {
             }.bind(this), 25);
         }
     },
-    
+
     parseCellParamKey: function(baseKey, valueKey)
     {
         var paramKey   = '';
         var bracketPos = valueKey.indexOf('[');
-            
+
         if (bracketPos != -1) {
             paramKey = baseKey+'['+valueKey.substr(0, bracketPos)+']'+valueKey.substr(bracketPos);
         } else {
             paramKey = baseKey+'['+valueKey+']';
         }
-        
+
         return paramKey;
     },
-    
+
     getCellParamsHash: function(cell)
     {
         var cellId = cell.identify();
         var config = this.cellsConfigs[cellId];
         var rowIds = this.rowsIds[this.cellsRowNums[cellId]];
         var params = $H({});
-        
+
         // Identifiers
         $H(rowIds).each(function(pair){
             params.set(this.parseCellParamKey(config.ids_key, pair.key), pair.value);
         }.bind(this));
-        
+
         // Additional parameters
         this.additionalParams.each(function(pair){
             params.set(this.parseCellParamKey(config.additional_key, pair.key), pair.value);
         }.bind(this));
-        
+
         // Additional column parameters
         if (!Object.isArray(config.column_params)) {
             $H(config.column_params).each(function(pair){
                 params.set(this.parseCellParamKey(config.additional_key, pair.key), pair.value);
             }.bind(this));
         }
-        
+
         // Global parameters
         params.update(this.globalParams);
-        
+
         return params;
     },
-    
+
     parseHashDimensions: function(hash, dimensions)
     {
         var vpDimensions = document.viewport.getDimensions();
-        
+
         $H(dimensions).each(function(pair){
             if (hash.get(pair.key) != '') {
                 var dimension = ''+hash.get(pair.key);
@@ -1723,10 +1727,10 @@ blcg.Grid.Editor.prototype = {
                 }
             }
         }.bind(this));
-        
+
         return hash;
     },
-    
+
     closeEditWindow: function()
     {
         if (this.editWindow) {
@@ -1735,7 +1739,7 @@ blcg.Grid.Editor.prototype = {
             this.editWindow = null;
         }
     },
-    
+
     editCell: function(cell)
     {
         if (this.isRequestRunning) {
@@ -1747,12 +1751,12 @@ blcg.Grid.Editor.prototype = {
             var cellConfig  = this.cellsConfigs[cell.identify()];
             var editUrl     = cellConfig.edit_url;
             var editParams  = this.getCellParamsHash(this.editedCell);
-            
+
             if (cellConfig.in_grid) {
                 var editor = this;
                 editUrl += (editUrl.match(new RegExp('\\?')) ? '&isAjax=true' : '?isAjax=true');
                 this.isRequestRunning = true;
-                
+
                 new Ajax.Request(editUrl, {
                     method: 'post',
                     parameters: editParams,
@@ -1760,7 +1764,7 @@ blcg.Grid.Editor.prototype = {
                         try {
                             if (transport.responseText.isJSON()) {
                                 var response = transport.responseText.evalJSON();
-                                
+
                                 if (response.error) {
                                     editor.cancelEdit();
                                     alert(response.message);
@@ -1771,17 +1775,17 @@ blcg.Grid.Editor.prototype = {
                                     cell.addClassName('blcg-column-editor-editing');
                                     editor.previousValue = cell.innerHTML;
                                     editor.hasPreviousValue = true;
-                                    
+
                                     var form = document.createElement('form');
                                     form.id = 'blcg-column-editor-form-' + cell.identify();
                                     form.innerHTML = response.content;
                                     cell.innerHTML = '';
                                     cell.appendChild(form);
                                     blcg.Tools.execNodeJS(cell);
-                                    
+
                                     editor.fillCellOverlay(cell);
                                     editor.positionCellOverlay(cell, null, editor.compareCells(cell, editor.mouseCell));
-                                    
+
                                     cell.getElementsBySelector('.blcg-editor-required-marker').each(function(e){
                                         e.hide();
                                         cell.addClassName('blcg-column-editor-editing-required');
@@ -1799,13 +1803,13 @@ blcg.Grid.Editor.prototype = {
                                 alert(transport.responseText);
                             }
                         }
-                        
+
                         editor.isRequestRunning = false;
                     },
                     onFailure: function(transport){
                         editor.cancelEdit();
                         editor.isRequestRunning = false;
-                        
+
                         if (editor.errorMessages.get('edit_request_failure')) {
                             alert(editor.errorMessages.get('edit_request_failure'));
                         }
@@ -1813,7 +1817,7 @@ blcg.Grid.Editor.prototype = {
                 });
             } else {
                 editUrl += (editUrl.match(new RegExp('\\?')) ? '&' : '?') + editParams.toQueryString();
-                
+
                 var windowConfig = $H(cellConfig.window);
                 windowConfig.set('closeCallback', function(){ this.cancelEdit(true); return true; }.bind(this));
                 windowConfig = this.parseHashDimensions(windowConfig, {
@@ -1822,12 +1826,12 @@ blcg.Grid.Editor.prototype = {
                     'minWidth': 'width',
                     'minHeight': 'height'
                 });
-                
+
                 this.editWindow = blcg.Tools.openIframeDialog(editUrl, windowConfig.toObject(), true);
             }
         }
     },
-    
+
     validateEdit: function(formParams)
     {
         if (this.isRequestRunning) {
@@ -1838,7 +1842,7 @@ blcg.Grid.Editor.prototype = {
             var cellId = cell.identify();
             var params = null;
             var cellConfig = this.cellsConfigs[cellId];
-            
+
             if (cellConfig.in_grid) {
                 var form = $('blcg-column-editor-form-' + cellId);
                 if (form) {
@@ -1854,14 +1858,14 @@ blcg.Grid.Editor.prototype = {
                 params = $H(formParams);
                 this.closeEditWindow();
             }
-            
+
             if (params && (params.values().length > 0)) {
                 params.update(this.getCellParamsHash(cell));
                 var saveUrl = cellConfig.save_url;
                 saveUrl += (saveUrl.match(new RegExp('\\?')) ? '&isAjax=true' : '?isAjax=true');
                 var editor = this;
                 this.isRequestRunning = true;
-                
+
                 new Ajax.Request(saveUrl, {
                     method: 'post',
                     parameters: params,
@@ -1869,7 +1873,7 @@ blcg.Grid.Editor.prototype = {
                         try {
                             if (transport.responseText.isJSON()) {
                                 var response = transport.responseText.evalJSON();
-                                
+
                                 if (response.error) {
                                     editor.cancelEdit();
                                     alert(response.message);
@@ -1882,11 +1886,11 @@ blcg.Grid.Editor.prototype = {
                                     cell.removeClassName('blcg-column-editor-editing-required');
                                     cell.innerHTML = response.content;
                                     blcg.Tools.execNodeJS(cell);
-                                    
+
                                     editor.previousValue = null;
                                     editor.hasPreviousValue = false;
                                     editor.editedCell = null;
-                                    
+
                                     editor.fillCellOverlay(cell);
                                     editor.positionCellOverlay(cell, null, editor.compareCells(cell, editor.mouseCell));
                                 }
@@ -1902,13 +1906,13 @@ blcg.Grid.Editor.prototype = {
                                 alert(transport.responseText);
                             }
                         }
-                        
+
                         editor.isRequestRunning = false;
                     },
                     onFailure: function(transport){
                         editor.cancelEdit();
                         editor.isRequestRunning = false;
-                        
+
                         if (editor.errorMessages.get('save_request_failure')) {
                             alert(editor.errorMessages.get('save_request_failure'));
                         }
@@ -1922,7 +1926,7 @@ blcg.Grid.Editor.prototype = {
             }
         }
     },
-    
+
     cancelEdit: function(fromDialog, errorMessage)
     {
         if (this.editedCell) {
@@ -1930,7 +1934,7 @@ blcg.Grid.Editor.prototype = {
                 this.editedCell.innerHTML = this.previousValue;
                 this.hasPreviousValue = false;
             }
-            
+
             var cellConfig = this.cellsConfigs[this.editedCell.identify()];
             this.previousValue = null;
             this.editedCell.removeClassName('blcg-column-editor-editing');
@@ -1938,7 +1942,7 @@ blcg.Grid.Editor.prototype = {
             this.fillCellOverlay(this.editedCell);
             this.positionCellOverlay(this.editedCell);
             this.editedCell = null;
-            
+
             if (!cellConfig.in_grid && !fromDialog) {
                 this.closeEditWindow();
             }
@@ -1964,13 +1968,13 @@ blcg.CustomColumn.List.prototype = {
             labelOnClass: 'blcg-custom-columns-group-label-on',
             labelOffClass: 'blcg-custom-columns-group-label-off',
             listClass: 'blcg-custom-columns-list',
-            buttonClass: 'blcg-custom-columns-column-button' 
+            buttonClass: 'blcg-custom-columns-column-button'
         }, config || {});
-        
+
         this.initListToggles();
         this.initButtonTooltips();
     },
-    
+
     initListToggles: function()
     {
         this.wrapper.getElementsBySelector('.'+this.config.labelClass).each(function(label){
@@ -1988,9 +1992,9 @@ blcg.CustomColumn.List.prototype = {
                     }
                 }
             }.bind(this));
-        }.bind(this));   
+        }.bind(this));
     },
-    
+
     initButtonTooltips: function()
     {
         this.wrapper.getElementsBySelector('.'+this.config.buttonClass).each(function(button){
@@ -2000,7 +2004,7 @@ blcg.CustomColumn.List.prototype = {
             }
         }.bind(this));
     }
-} 
+}
 
 blcg.CustomColumn.Form = Class.create(blcg.Config);
 
@@ -2008,7 +2012,7 @@ blcg.CustomColumn.Config = Class.create();
 blcg.CustomColumn.Config.prototype = {
     initialize: function(code, configButtonId, rendererTargetId, configUrl, windowConfig)
     {
-        $(configButtonId).observe('click', function(){ 
+        $(configButtonId).observe('click', function(){
             blcg.Tools.openDialogFromPost(configUrl, {
               'code': code,
               'renderer_target_id': rendererTargetId,
@@ -2023,14 +2027,14 @@ blcg.CustomColumn.OptionsColor.registerRowChange = function(childId, backgroundC
     var elm    = $(childId),
         upElm  = null,
         search = (!!onlyCell ? 'td' : 'tr');
-    
+
     if (elm && (upElm = elm.up(search))) {
         if (backgroundColor != '') {
             upElm.setStyle({'backgroundColor': backgroundColor});
         }
         if (textColor != '') {
             upElm.setStyle({'color': textColor});
-            
+
             // Force color for links, as they certainly are given a specific one
             upElm.getElementsBySelector('a').each(function(link){
                 link.setStyle({'color': textColor});
@@ -2056,14 +2060,14 @@ blcg.Filter.Categories.prototype = {
         this.windowConfig = windowConfig;
         this.button.observe('click', function(){ this.openChooser(); }.bind(this));
     },
-    
+
     openChooser: function()
     {
         var ids = $F(this.input), chooserUrl = this.chooserUrl;
         chooserUrl += (chooserUrl.match(new RegExp('\\?')) ? '&' : '?') + this.paramName + '=' + ids;
         this.window = blcg.Tools.openIframeDialog(chooserUrl, this.windowConfig, true);
     },
-    
+
     applyChoice: function(ids)
     {
         if (this.window) {
