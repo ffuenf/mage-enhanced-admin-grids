@@ -23,28 +23,28 @@ class BL_CustomGrid_Block_Widget_Grid_Column_Renderer_Product_Image
             $helper = Mage::helper('catalog/image')
                 ->init($dummyProduct, $this->getColumn()->getAttributeCode(), $image);
             $helper->placeholder('bl/customgrid/images/catalog/product/placeholder.jpg');
-            
+
             if (!$this->getColumn()->getBrowserResizeOnly()
                 && (($width = intval($this->getColumn()->getImageWidth())) > 0)
                 && (($height = intval($this->getColumn()->getImageHeight())) > 0)) {
                 $helper->resize($width, $height);
             }
-            
+
             return array($image, (string)$helper);
         }
         return null;
     }
-    
+
     public function render(Varien_Object $row)
     {
         if ($images = $this->_getImageUrl($row)) {
             $image = ($this->getColumn()->getDisplayImagesUrls() ? $images[1] : $images[0]);
-            
+
             if ($this->getColumn()->getDisplayImages()) {
-                if ((($width = intval($this->getColumn()->getImageWidth())) > 0)
-                    && (($height = intval($this->getColumn()->getImageHeight())) > 0)) {
-                    $dimensions = ' width="'.$width.'" height="'.$height.'" ';
-                }
+                $width = intval($this->getColumn()->getImageWidth());
+                $height = intval($this->getColumn()->getImageHeight());
+
+                $dimensions = '' . ($width > 0 ? ' width="'. $width . '"' : '') . ($height > 0 ? ' height="' . $height . '" ' : '');
                 return '<img src="'.$images[1].'" alt="'.$this->htmlEscape($image).'" title="'.$this->htmlEscape($image).'" '.$dimensions.' />';
             } else {
                 return $image;
@@ -53,7 +53,7 @@ class BL_CustomGrid_Block_Widget_Grid_Column_Renderer_Product_Image
             return '';
         }
     }
-    
+
     public function renderExport(Varien_Object $row)
     {
         if ($images = $this->_getImageUrl($row)) {
