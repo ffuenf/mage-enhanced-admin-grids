@@ -480,7 +480,8 @@ class BL_CustomGrid_Model_Observer
                 if (array_key_exists($id, $this->_columns)) {
                     unset($this->_columns[$id]);
                     if ($this->_lastColumnId == $id) {
-                        $this->_lastColumnId = array_pop(array_keys($this->_columns));
+                        $aTmp = array_keys($this->_columns);
+                        $this->_lastColumnId = array_pop($aTmp);
                     }
                 }
                 return $this;
