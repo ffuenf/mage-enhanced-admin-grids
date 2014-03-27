@@ -20,7 +20,7 @@ class BL_CustomGrid_Model_Grid_Type_Tax_Class
     {
         return ($type == 'adminhtml/tax_class_grid');
     }
-
+    
     public function canExport($type)
     {
         /**
@@ -31,16 +31,18 @@ class BL_CustomGrid_Model_Grid_Type_Tax_Class
         */
         return false;
     }
-
+    
     public function checkUserEditPermissions($type, $model, $block=null, $params=array())
     {
         if (parent::checkUserEditPermissions($type, $model, $block, $params)) {
-            if (isset($params['additional']['class_type'])) {
+            if (!is_null($block)) {
+                $classType = $block->getClassType();
+            } elseif (isset($params['additional']['class_type'])) {
                 $classType = $params['additional']['class_type'];
             } else {
                 $classType = null;
             }
-
+            
             switch ($classType) {
                 case Mage_Tax_Model_Class::TAX_CLASS_TYPE_CUSTOMER:
                     return Mage::getSingleton('admin/session')->isAllowed('sales/tax/classes_customer');
@@ -50,7 +52,7 @@ class BL_CustomGrid_Model_Grid_Type_Tax_Class
         }
         return false;
     }
-
+    
     protected function _getBaseEditableFields($type)
     {
         return array(
@@ -61,17 +63,17 @@ class BL_CustomGrid_Model_Grid_Type_Tax_Class
             ),
         );
     }
-
+    
     public function getAdditionalEditParams($type, $grid)
     {
         return array('class_type' => $grid->getClassType());
     }
-
+    
     protected function _getEntityRowIdentifiersKeys($type)
     {
         return array('class_id');
     }
-
+    
     protected function _loadEditedEntity($type, $config, $params)
     {
         if (isset($params['ids']['class_id'])
@@ -80,7 +82,7 @@ class BL_CustomGrid_Model_Grid_Type_Tax_Class
         }
         return null;
     }
-
+    
     protected function _isEditedEntityLoaded($type, $config, $params, $entity)
     {
         if (parent::_isEditedEntityLoaded($type, $config, $params, $entity)
@@ -89,7 +91,7 @@ class BL_CustomGrid_Model_Grid_Type_Tax_Class
         }
         return false;
     }
-
+    
     protected function _getLoadedEntityName($type, $config, $params, $entity)
     {
         return $entity->getClassName();

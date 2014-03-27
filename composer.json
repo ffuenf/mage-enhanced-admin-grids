@@ -1,10 +1,6 @@
 {
-  "name":"aligent/mage-enhanced-admin-grids",
-  "type":"magento-module",
-  "homepage":"https://github.com/aligent/mage-enhanced-admin-grids",
-  "description":"Enhanced Admin Grids extension for Magento.",
-  "require":{
-    "magento-hackathon/magento-composer-installer":"*"
-  }
+    "name": "mage-eag/mage-enhanced-admin-grids",
+    "type": "magento-module",
+    "description": "Enhanced Admin Grids Extension for Magento"
 }
 

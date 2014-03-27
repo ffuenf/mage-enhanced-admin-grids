@@ -72,6 +72,19 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
     protected $_maxOrder   = null;
     
     /**
+    * Default pagination values (usually hard-coded in grid template)
+    * 
+    * @var array
+    */
+    protected $_defaultPaginationValues = array(20, 30, 50, 100, 200);
+    /**
+    * Actual pagination values in use
+    * 
+    * @var array
+    */
+    protected $_paginationValues = null;
+    
+    /**
     * Columns alignments
     */
     const GRID_COLUMN_ALIGNMENT_LEFT   = 'left';
@@ -179,9 +192,9 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
     const GRID_DEFAULT_PARAM_DEFAULT             = 'default';
     const GRID_DEFAULT_PARAM_FORCE_ORIGINAL      = 'force_original';
     const GRID_DEFAULT_PARAM_FORCE_CUSTOM        = 'force_custom';
-    const GRID_DEFAULT_PARAM_MERGE_DEFAULT       = 'merge_default'; // merge dans l'ordre des choses
-    const GRID_DEFAULT_PARAM_MERGE_BASE_ORIGINAL = 'merge_on_original'; // l'original se fait merger par dessus
-    const GRID_DEFAULT_PARAM_MERGE_BASE_CUSTOM   = 'merge_on_custom'; // inversement
+    const GRID_DEFAULT_PARAM_MERGE_DEFAULT       = 'merge_default'; 
+    const GRID_DEFAULT_PARAM_MERGE_BASE_ORIGINAL = 'merge_on_original';
+    const GRID_DEFAULT_PARAM_MERGE_BASE_CUSTOM   = 'merge_on_custom';
     
     protected function _construct()
     {
@@ -191,6 +204,16 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
         //$this->resetProfiles();
         $this->resetColumns();
         $this->resetRolesConfig();
+    }
+    
+    protected function _getHelper()
+    {
+        return Mage::helper('customgrid');
+    }
+    
+    protected function _getConfigHelper()
+    {
+        return Mage::helper('customgrid/config');
     }
     
     protected function _beforeSave()
@@ -1000,6 +1023,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
             'order'           => $order,
             'origin'          => self::GRID_COLUMN_ORIGIN_GRID,
             'is_visible'      => 1,
+            'filter_only'     => 0,
             'is_system'       => ($column->getIsSystem() ? 1 : 0),
             'missing'         => 0,
             'store_id'        => null,
@@ -1025,10 +1049,11 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
             'index'           => $key,
             'width'           => '',
             'align'           => self::GRID_COLUMN_ALIGNMENT_LEFT,
-            'header'          => Mage::helper('customgrid')->getColumnHeaderName($key),
+            'header'          => $this->_getHelper()->getColumnHeaderName($key),
             'order'           => $order,
             'origin'          => self::GRID_COLUMN_ORIGIN_COLLECTION,
             'is_visible'      => 0,
+            'filter_only'     => 0,
             'is_system'       => 0,
             'missing'         => 0,
             'store_id'        => null,
@@ -1130,7 +1155,6 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
                         'origin'     => self::GRID_COLUMN_ORIGIN_GRID,
                         'is_system'  => ($column->getIsSystem() ? 1 : 0),
                         'missing'    => 0,
-                        // @todo reset renderer_type and renderer_params ?
                     )
                 );
                 
@@ -1183,7 +1207,6 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
                                     // If column did not previously come from collection, remove it from its previous origin
                                     unset($this->_originIds[$previousOrigin][array_search($key, $this->_originIds[$previousOrigin])]);
                                     $this->_originIds[self::GRID_COLUMN_ORIGIN_COLLECTION][] = $key;
-                                    // @todo reset renderer_type and renderer_params ?
                                 }
                                 
                                 $foundCollectionIds[] = $key;
@@ -1606,24 +1629,25 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
         return $filters;
     }
     
-    public function getGridBlockDefaultParamValue($type, $blockValue, $customValue=null, $fromCustom=false)
+    public function getGridBlockDefaultParamValue($type, $blockValue, $customValue=null, $fromCustom=false, $originalValue=null)
     {
-        // @todo verify if this is working completely and as expected (tied with some methods in rewrited blocks from observer)
+        // @todo review this code (seems to be working correctly, but the fact is what should actually be the correct way ?)
+        // @todo in the meantime, greatly improve corresponding hints / descriptions, make it as intuitive as possible :)
         $value = $blockValue;
         $customValue = (!$fromCustom ? $this->getData('default_'.$type) : $customValue);
         
         if (!$behaviour = $this->_getData('default_'.$type.'_behaviour')) {
-            $behaviour = Mage::helper('customgrid/config')->getCustomDefaultParamBehaviour($type);
+            $behaviour = $this->_getConfigHelper()->getCustomDefaultParamBehaviour($type);
         }
         if ($behaviour == self::GRID_DEFAULT_PARAM_FORCE_CUSTOM) {
-            // Take custom value if possible, else default = block in all cases
+            // Take the custom value if it is available, else keep the block value
             if (!is_null($customValue)) {
                 $value = $customValue;
             }
         } elseif ($behaviour == self::GRID_DEFAULT_PARAM_FORCE_ORIGINAL) {
             // Take custom value if there is no one for block and if we're currently setting custom default params
-            if (!is_null($blockValue) && $fromCustom) {
-                $value = $customValue;
+            if (is_null($blockValue) && $fromCustom) {
+                $value = $blockValue;
             }
         } elseif (($type == 'filter')
                   && (($behaviour == self::GRID_DEFAULT_PARAM_MERGE_DEFAULT)
@@ -1637,7 +1661,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
             } elseif ($behaviour == self::GRID_DEFAULT_PARAM_MERGE_BASE_ORIGINAL) {
                 $value = array_merge($blockFilters, $customFilters);
             } else {
-                if ($customGiven) {
+                if ($fromCustom) {
                     $value = array_merge($blockFilters, $customFilters);
                 } else {
                     $value = array_merge($customFilters, $blockFilters);
@@ -1650,7 +1674,41 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
             }
         }
         
+        if ($type == 'limit') {
+            // Check limit against available values, return original value if invalid
+            // @todo here is assumed that the only value that is checked is the prioritized one, should we fallback instead ?
+            
+            if (!in_array($value, $this->getPaginationValues())) {
+                $value = (is_null($originalValue) ? $blockValue : $originalValue);
+            }
+        }
+        
         return $value;
+    }
+    
+    /**
+    * Apply base default limit to grid block (based on possibly custom pagination values)
+    * 
+    * @param Mage_Adminhtml_Block_Widget_Grid $grid Grid block instance
+    * @return this
+    */
+    public function applyBaseDefaultLimitToGridBlock(Mage_Adminhtml_Block_Widget_Grid $grid)
+    {
+        $configLimit  = $this->_getConfigHelper()->getDefaultPaginationValue();
+        $blockLimit   = $grid->getDefaultLimit();
+        $defaultLimit = null;
+        $values = $this->getPaginationValues();
+        
+        if (!empty($configLimit) && in_array($configLimit, $values)) {
+            $defaultLimit = $configLimit;
+        } elseif (!empty($blockLimit) && in_array($blockLimit, $values)) {
+            $defaultLimit = $blockLimit;
+        } else {
+            $defaultLimit = array_shift($values);
+        }
+        
+        $grid->blcg_setDefaultLimit($defaultLimit, true);
+        return $this;
     }
     
     /**
@@ -1661,11 +1719,11 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
     */
     public function applyDefaultToGridBlock(Mage_Adminhtml_Block_Widget_Grid $grid)
     {
-        // Apply default values
         if ($default = $this->_getData('default_page')) {
             $grid->blcg_setDefaultPage($default);
         }
-        if ($default = $this->_getData('default_limit')) {
+        if (($default = $this->_getData('default_limit'))
+            && in_array($default, $this->getPaginationValues())) {
             $grid->blcg_setDefaultLimit($default);
         }
         if ($default = $this->_getData('default_sort')) {
@@ -1727,6 +1785,44 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
         return $this;
     }
     
+    public function getIgnoreCustomHeaders()
+    {
+        return $this->_getConfigHelper()->getIgnoreCustomHeaders();
+    }
+    
+    public function getIgnoreCustomWidths()
+    {
+        return $this->_getConfigHelper()->getIgnoreCustomWidths();
+    }
+    
+    public function getIgnoreCustomAlignments()
+    {
+        return $this->_getConfigHelper()->getIgnoreCustomAlignments();
+    }
+    
+    public function getPaginationValues()
+    {
+        // @todo do not forget to reset this whenever different pagination values will be available at grid-level
+        if (is_null($this->_paginationValues)) {
+            $values = $this->_getConfigHelper()->getPaginationValues();
+            
+            if (!is_array($values) || empty($values)) {
+                $values = $this->_defaultPaginationValues;
+            } elseif ($this->_getConfigHelper()->getMergeBasePagination()) {
+                $values = array_unique(array_merge($values, $this->_defaultPaginationValues));
+                sort($values, SORT_NUMERIC);
+            }
+            
+            $this->_paginationValues = $values;
+        }
+        return $this->_paginationValues;
+    }
+    
+    public function getPinnableHeader()
+    {
+        return $this->_getConfigHelper()->getPinHeader();
+    }
+    
     /**
     * Apply columns values to grid block
     * 
@@ -1740,7 +1836,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
         $columnsOrders = array();
         $columns = $this->getColumns(false, true);
         uasort($columns, array($this, '_sortColumns'));
-        $attributes    = $this->getAvailableAttributes();
+        $attributes = $this->getAvailableAttributes();
         
         foreach ($columns as $column) {
             if (!in_array($column['id'], $gridIds, true)) {
@@ -1867,14 +1963,32 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
             } else {
                 if ($column['is_visible']) {
                     // Update visible columns
-                    $grid->getColumn($column['id'])
-                        ->setWidth($column['width'])
-                        ->setAlign($column['align'])
-                        ->setHeader($column['header']);
+                    if ($gridColumn = $grid->getColumn($column['id'])) {
+                        if (!$this->getIgnoreCustomWidths()) {
+                            $gridColumn->setWidth($column['width']);
+                        }
+                        if (!$this->getIgnoreCustomAlignments()) {
+                            $gridColumn->setAlign($column['align']);
+                        }
+                        if (!$this->getIgnoreCustomHeaders()) {
+                            $gridColumn->setHeader($column['header']);
+                        }
+                    }
                     $columnsOrders[] = $column['id'];
+                    
                 } else {
                     // Remove not visible columns
                     $grid->blcg_removeColumn($column['id']);
+                }
+            }
+            
+            if ($column['filter_only']
+                && ($columnBlock = $grid->getColumn($column['id']))) {
+                $columnBlock->setBlcgFilterOnly(true);
+                
+                if ($grid->blcg_isExport()) {
+                    // Columns with is_system flag on won't be exported, so forcing it will save us two overloads
+                    $columnBlock->setIsSystem(true);
                 }
             }
         }
@@ -1918,7 +2032,10 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
         if (isset($column['header'])) {
             $values['header'] = $column['header'];
         }
-        $values['is_visible'] = (isset($column['is_visible']) && $column['is_visible'] ? 1 : 0);
+        
+        $values['is_visible']  = (isset($column['is_visible']) && $column['is_visible'] ? 1 : 0);
+        $values['filter_only'] = ($values['is_visible'] && isset($column['filter_only']) && $column['filter_only'] ? 1 : 0);
+        
         if (isset($column['order'])) {
             $values['order'] = intval($column['order']);
         }
@@ -1996,10 +2113,9 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
                 unset($columns[$column['column_id']]);
             } else {
                 // Assume deleted column
-                unset($this->_originIds[$this->_columns[$columnId]['origin']][array_search(
-                    $columnId, 
-                    $this->_columns[$columnId]['origin']
-                )]);
+                if (($key = array_search($columnId, $this->_originIds[$this->_columns[$columnId]['origin']])) !== false) {
+                    unset($this->_originIds[$this->_columns[$columnId]['origin']][$key]);
+                }
                 unset($this->_columns[$columnId]);
             }
         }
@@ -2014,17 +2130,18 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
                     
                     $this->_columns[$newColumnId] = array_merge(
                         array(
-                            'grid_id'    => $this->getId(),
-                            'id'         => $newColumnId,
-                            'index'      => $column['index'],
-                            'width'      => '',
-                            'align'      => self::GRID_COLUMN_ALIGNMENT_LEFT,
-                            'header'     => '',
-                            'order'      => 0,
-                            'origin'     => self::GRID_COLUMN_ORIGIN_ATTRIBUTE,
-                            'is_visible' => 1,
-                            'is_system'  => 0,
-                            'missing'    => 0,
+                            'grid_id'     => $this->getId(),
+                            'id'          => $newColumnId,
+                            'index'       => $column['index'],
+                            'width'       => '',
+                            'align'       => self::GRID_COLUMN_ALIGNMENT_LEFT,
+                            'header'      => '',
+                            'order'       => 0,
+                            'origin'      => self::GRID_COLUMN_ORIGIN_ATTRIBUTE,
+                            'is_visible'  => 1,
+                            'filter_only' => 0,
+                            'is_system'   => 0,
+                            'missing'     => 0,
                         ),
                         $this->_extractColumnValues($column, true, true, false, $allowEditable)
                     );
@@ -2049,7 +2166,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
     public function updateCustomColumns(array $columns, $mustSave=true)
     {
         $this->loadColumns();
-        $helper = Mage::helper('customgrid');
+        $helper = $this->_getHelper();
         
         if (!is_null($this->_typeModel)) {
             $typeCode = $this->_typeModel->getCode();
@@ -2094,7 +2211,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
             $columnModel = $availableColumns[$code];
             
             if (isset($columnsGroups[$columnModel->getGroupId()])
-                && Mage::helper('customgrid/config')->getAddGroupToCustomColumnsDefaultHeader()) {
+                && $this->_getConfigHelper()->getAddGroupToCustomColumnsDefaultHeader()) {
                 $header = $helper->__('%s (%s)', $columnModel->getName(), $columnsGroups[$columnModel->getGroupId()]);
             } else {
                 $header = $columnModel->getName();
@@ -2110,6 +2227,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
                 'order'           => $this->_getNextOrder(),
                 'origin'          => self::GRID_COLUMN_ORIGIN_CUSTOM,
                 'is_visible'      => 1,
+                'filter_only'     => 0,
                 'is_system'       => 0,
                 'missing'         => 0,
                 'store_id'        => null,
@@ -2332,6 +2450,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
     {
         if (is_null(self::$_columnAlignments)) {
             $helper = Mage::helper('customgrid');
+            
             self::$_columnAlignments = array(
                 self::GRID_COLUMN_ALIGNMENT_LEFT   => $helper->__('Left'),
                 self::GRID_COLUMN_ALIGNMENT_CENTER => $helper->__('Middle'),
@@ -2350,6 +2469,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
     {
         if (is_null(self::$_columnOrigins)) {
             $helper = Mage::helper('customgrid');
+            
             self::$_columnOrigins = array(
                 self::GRID_COLUMN_ORIGIN_GRID       => $helper->__('Grid'),
                 self::GRID_COLUMN_ORIGIN_COLLECTION => $helper->__('Collection'),
@@ -2408,6 +2528,7 @@ class BL_CustomGrid_Model_Grid extends Mage_Core_Model_Abstract
     {
         if (is_null(self::$_gridActions)) {
             $helper = Mage::helper('customgrid');
+            
             self::$_gridActions = array(
                 self::GRID_ACTION_CUSTOMIZE_COLUMNS       => $helper->__('Customize Columns'),
                 self::GRID_ACTION_USE_CUSTOMIZED_COLUMNS  => $helper->__('Use Customized Columns'),
