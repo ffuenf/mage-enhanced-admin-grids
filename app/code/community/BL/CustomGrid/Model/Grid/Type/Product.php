@@ -24,6 +24,7 @@ class BL_CustomGrid_Model_Grid_Type_Product
         return (($type == 'adminhtml/catalog_product_grid')
             || ($type == 'adminhtml/catalog_category_tab_product')
             || ($type == 'adminhtml/catalog_product_edit_tab_related')
+            || ($type == 'adminhtml/sales_order_create_search_grid')
             || ($type == 'adminhtml/catalog_product_edit_tab_upsell')
             || ($type == 'adminhtml/catalog_product_edit_tab_crosssell'));
     }
