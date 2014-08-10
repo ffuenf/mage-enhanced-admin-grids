@@ -25,7 +25,7 @@ class BL_CustomGrid_Helper_Collection
     * @var array
     */
     protected $_quoteIdentifierCallbacks = array();
-    
+
     /**
     * Count of currently registered quoteIdentifier() callbacks
     * 
@@ -35,7 +35,7 @@ class BL_CustomGrid_Helper_Collection
     
     /**
     * Base callbacks to call when building filters map for a given grid block
-    * 
+    *
     * @var array
     */
     protected $_baseFiltersMapCallbacks  = array(
@@ -45,10 +45,10 @@ class BL_CustomGrid_Helper_Collection
         'adminhtml/sales_shipment_grid'   => '_prepareSalesShipmentFiltersMap',
         'adminhtml/sales_creditmemo_grid' => '_prepareSalesCreditmemoFiltersMap',
     );
-    
+
     /**
     * Additional callbacks to call when building filters map for a given grid block
-    * 
+    *
     * @var array
     */
     protected $_additionalFiltersMapCallbacks = array();
@@ -64,7 +64,7 @@ class BL_CustomGrid_Helper_Collection
     {
         return $collection->getSelect()->getAdapter();
     }
-    
+
     public function getCollectionMainTableAlias($collection, $defaultAlias=null, $mainTableName='')
     {
         if (is_null($defaultAlias)) {
@@ -74,11 +74,11 @@ class BL_CustomGrid_Helper_Collection
                 $defaultAlias = 'main_table';
             }
         }
-        
+
         $fromPart    = $collection->getSelect()->getPart(Zend_Db_Select::FROM);
         $mainAlias   = '';
         $fromAliases = array();
-        
+
         if (!isset($fromPart[$defaultAlias])
             || ($fromPart[$defaultAlias]['joinType'] != Zend_Db_Select::FROM)) {
             foreach ($fromPart as $key => $config) {
@@ -95,15 +95,15 @@ class BL_CustomGrid_Helper_Collection
         } else {
             $mainAlias = $defaultAlias;
         }
-        
+
         return ($mainAlias !== '' ? $mainAlias : (!empty($fromParts) ? array_shift($fromParts) : $defaultAlias));
     }
-    
+
     public function getAttributeTableAlias($attribute)
     {
         return '_table_'.$attribute;
     }
-    
+
     public function callQuoteIdentifier($identifier, $callbackIndex)
     {
         foreach ($this->_quoteIdentifierCallbacks as $callback) {
@@ -114,7 +114,7 @@ class BL_CustomGrid_Helper_Collection
         }
         return $identifier;
     }
-    
+
     public function getQuoteIdentifierCallback($adapter)
     {
         $adapterKey = spl_object_hash($adapter);
@@ -131,11 +131,11 @@ class BL_CustomGrid_Helper_Collection
         
         return $this->_quoteIdentifierCallbacks[$adapterKey]['callback'];
     }
-    
+
     public function buildFiltersMapArray($fields, $tableAlias)
     {
         $result = array();
-        
+
         foreach ($fields as $index => $field) {
             if (is_string($index)) {
                 $result[$index] = $tableAlias.'.'.$field;;
@@ -143,10 +143,10 @@ class BL_CustomGrid_Helper_Collection
                 $result[$field] = $tableAlias.'.'.$field;
             }
         }
-        
+
         return $result;
     }
-    
+
     public function addFilterToCollectionMap($collection, $filter, $alias=null)
     {
         if (is_null($alias)) {
@@ -160,7 +160,7 @@ class BL_CustomGrid_Helper_Collection
         }
         return $this;
     }
-    
+
     public function addCollectionFiltersMapCallback($blockType, $callback, $params=array(), $addNative=true)
     {
          $this->_additionalFiltersMapCallbacks[$blockType][] = array(
@@ -170,12 +170,12 @@ class BL_CustomGrid_Helper_Collection
         );
         return $this;
     }
-    
+
     public function shouldPrepareCollectionFiltersMap($collection)
     {
         return !$collection->hasFlag(self::COLLECTION_APPLIED_MAP_FLAG);
     }
-    
+
     protected function _sortMatchingTables($a, $b)
     {
         return ($a['priority'] > $b['priority'] ? 1 : ($a['priority'] < $b['priority'] ? -1 : 0));
@@ -320,7 +320,7 @@ class BL_CustomGrid_Helper_Collection
         if (!$this->shouldPrepareCollectionFiltersMap($collection)) {
             return $this;
         }
-        
+
         $blockType = $model->getBlockType();
         $previousFiltersMap = $this->_getCollectionFiltersMap($collection);
         $collection->setFlag(self::COLLECTION_PREVIOUS_MAP_FLAG, $previousFiltersMap);
@@ -339,7 +339,7 @@ class BL_CustomGrid_Helper_Collection
                 );
             }
         }
-        
+
         $this->_handleUnmappedFilters($collection, $block, $model, $filters);
         $collection->setFlag(self::COLLECTION_APPLIED_MAP_FLAG, true);
         
@@ -357,7 +357,7 @@ class BL_CustomGrid_Helper_Collection
         }
         return $this;
     }
-    
+
     protected function _prepareCatalogProductFiltersMap($collection, $block, $model)
     {
         $this->addFilterToCollectionMap(
@@ -408,7 +408,7 @@ class BL_CustomGrid_Helper_Collection
         );
         return $this;
     }
-    
+
     protected function _prepareSalesInvoiceFiltersMap($collection, $block, $model)
     {
         $this->addFilterToCollectionMap(

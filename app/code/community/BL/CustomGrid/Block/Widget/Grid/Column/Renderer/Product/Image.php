@@ -23,18 +23,17 @@ class BL_CustomGrid_Block_Widget_Grid_Column_Renderer_Product_Image
             $helper = Mage::helper('catalog/image')
                 ->init($dummyProduct, $this->getColumn()->getAttributeCode(), $image);
             $helper->placeholder('bl/customgrid/images/catalog/product/placeholder.jpg');
-            
+
             if (!$this->getColumn()->getBrowserResizeOnly()
                 && (($width = intval($this->getColumn()->getImageWidth())) > 0)
                 && (($height = intval($this->getColumn()->getImageHeight())) > 0)) {
                 $helper->resize($width, $height);
             }
-            
+
             return array($image, (string)$helper);
         }
         return null;
     }
-    
     protected function _getOriginalImageUrl(Varien_Object $row)
     {
         if (strlen($image = $this->_getValue($row)) && ($image != 'no_selection')) {
@@ -42,14 +41,12 @@ class BL_CustomGrid_Block_Widget_Grid_Column_Renderer_Product_Image
         }
         return null;
     }
-    
     public function render(Varien_Object $row)
     {
         $result = '';
         
         if ($images = $this->_getImageUrl($row)) {
             $image = ($this->getColumn()->getDisplayImagesUrls() ? $images[1] : $images[0]);
-            
             if ($this->getColumn()->getOriginalImageLink()
                 && ($imageUrl = $this->_getOriginalImageUrl($row))) {
                 $result .= '<a href="'.$imageUrl.'" target="_blank">';
@@ -71,7 +68,7 @@ class BL_CustomGrid_Block_Widget_Grid_Column_Renderer_Product_Image
         
         return $result;
     }
-    
+
     public function renderExport(Varien_Object $row)
     {
         if ($images = $this->_getImageUrl($row)) {
