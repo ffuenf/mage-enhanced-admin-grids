@@ -253,7 +253,46 @@ blcg.Tools = {
             cb.checked = !!checked;
         });
     }
-}
+};
+
+blcg.EventsManager = Class.create();
+blcg.EventsManager.prototype = {
+    initialize: function()
+    {
+        this.handlers = $H({});
+    },
+    
+    addUniqueHandler: function(id, type, element, eventName, callback)
+    {
+        var handler = this.handlers.get(id);
+        
+        if (handler) {
+            if (handler.type == 'varien') {
+                if (typeof(varienGlobalEvents) != 'undefined') {
+                    varienGlobalEvents.removeEventHandler(handler.eventName, handler.callback)
+                }
+            } else if (type == 'prototype') {
+                Event.stopObserving(handler.element, handler.eventName, handler.callback);
+            }
+            this.handlers.unset(id);
+        }
+        if (type == 'varien') {
+            if (typeof(varienGlobalEvents) != 'undefined') {
+                varienGlobalEvents.attachEventHandler(eventName, callback);
+            } else {
+                return;
+            }
+        } else if (type == 'prototype') {
+            Event.observe(element, eventName, callback);
+        } else {
+            return;
+        }
+        
+        this.handlers.set(id, {type: type, element: element, eventName: eventName, callback: callback});
+    }
+};
+
+blcgEventsManager = new blcg.EventsManager();
 
 /*
  * Copyright (c) 2006 Jonathan Weiss <jw@innerewut.de>
@@ -396,7 +435,7 @@ blcg.Tooltip.prototype = {
     {
         return document.viewport.getScrollOffsets();
     }
-}
+};
 
 blcg.Config = Class.create();
 blcg.Config.prototype = {
@@ -445,7 +484,7 @@ blcg.Config.prototype = {
         var target = $(this.rendererTargetId);
         target.value = content;
     }
-}
+};
 
 if (typeof(blcg.Renderer) == 'undefined') {
     blcg.Renderer = {};
@@ -565,7 +604,7 @@ blcg.Renderer.Select.prototype = {
             this.currentRenderer = '';
         }
     }
-}
+};
 
 if (typeof(blcg.Renderer.Collection) == 'undefined') {
     blcg.Renderer.Collection = {};
@@ -761,7 +800,7 @@ blcg.Form.Element.DependenceController.prototype = {
             }.bind(this));
         }
     }
-}
+};
 
 /*
 * Table drag'n'drop
@@ -800,8 +839,10 @@ blcg.TableDnd.prototype = {
         
         this.makeDraggable(table);
         
-        Event.observe(document, 'mousemove', function(event){ this.onMouseMove(event); }.bind(this));
-        Event.observe(document, 'mouseup', function(event){ this.onMouseUp(event); }.bind(this));
+        var onMouseMoveHandler = this.onMouseMove.bind(this);
+        var onMouseUpHandler = this.onMouseUp.bind(this);
+        blcgEventsManager.addUniqueHandler('blcg-dnd-'+$(table).identify()+'-mouse-move', 'prototype', document, 'mousemove', onMouseMoveHandler);
+        blcgEventsManager.addUniqueHandler('blcg-dnd-'+$(table).identify()+'-mouse-up', 'prototype', document, 'mouseup', onMouseUpHandler);
     },
     
     makeDraggable: function(table)
@@ -817,6 +858,7 @@ blcg.TableDnd.prototype = {
                     this.currentTable = table;
                     this.mouseOffset  = this.getMouseOffset(cell, event);
                     if (this.tableDndConfig.onDragStart) {
+                        event.preventDefault(); 
                         // Call the onDrop method if there is one
                         this.tableDndConfig.onDragStart(table, cell);
                     }
@@ -834,6 +876,7 @@ blcg.TableDnd.prototype = {
                             this.currentTable = table;
                             this.mouseOffset  = this.getMouseOffset(row, event);
                             if (this.tableDndConfig.onDragStart) {
+                                event.preventDefault(); 
                                 // Call the onDrop method if there is one
                                 this.tableDndConfig.onDragStart(table, row);
                             }
@@ -859,6 +902,7 @@ blcg.TableDnd.prototype = {
                     this.currentTable = table;
                     this.mouseOffset  = this.getMouseOffset(cell, event);
                     if (this.tableDndConfig.onDragStart) {
+                        event.preventDefault(); 
                         // Call the onDrop method if there is one
                         this.tableDndConfig.onDragStart(table, cell);
                     }
@@ -874,6 +918,7 @@ blcg.TableDnd.prototype = {
                         this.currentTable = table;
                         this.mouseOffset  = this.getMouseOffset(row, event);
                         if (this.tableDndConfig.onDragStart) {
+                            event.preventDefault(); 
                             // Call the onDrop method if there is one
                             this.tableDndConfig.onDragStart(table, row);
                         }
@@ -1058,7 +1103,7 @@ blcg.TableDnd.prototype = {
             this.currentTable = null; // Let go of the table too
         }
     }
-}
+};
 
 if (typeof(blcg.Grid) == 'undefined') {
     blcg.Grid = {};
@@ -1085,12 +1130,8 @@ blcg.Grid.Export.prototype = {
         
         this.customSizeInput.hide();
         this.customSizeInput.disabled = true;
-        this.customSizeInput.observe('change', function(){
-            this.verifyInput(this.customSizeInput, '');
-        }.bind(this));
-        this.fromResultInput.observe('change', function(){
-            this.verifyInput(this.fromResultInput, '1');
-        }.bind(this));
+        this.customSizeInput.observe('change', function(){ this.verifyInput(this.customSizeInput, '');  }.bind(this));
+        this.fromResultInput.observe('change', function(){ this.verifyInput(this.fromResultInput, '1'); }.bind(this));
         
         this.sizeSelect.observe('change', function(){
             if ($F(this.sizeSelect) != '') {
@@ -1131,7 +1172,7 @@ blcg.Grid.Export.prototype = {
         }
         return blcg.Tools.submitContainerValues(this.container, $F(this.formatSelect), this.additional, 'GET');
     }
-}
+};
 
 blcg.Grid.Config = Class.create();
 blcg.Grid.Config.prototype = {
@@ -1140,8 +1181,10 @@ blcg.Grid.Config.prototype = {
         this.columns = $H({});
         this.columnsIds = $A({});
         this.checkboxes = $H({});
+        this.filterCheckboxes = $H({});
         this.orderInputs = $H({});
         this.checkedValues = $A({});
+        this.checkedFilterValues = $A({});
         this.nextId = 0;
             
         this.containerId = containerId;
@@ -1165,8 +1208,8 @@ blcg.Grid.Config.prototype = {
             orderPitch: 1,
             useDnd: false
         }, config || {});
-        this.config.originalMaxOrder = this.config.maxOrder;
         
+        this.config.originalMaxOrder = this.config.maxOrder;
         this.config.idRegex = new RegExp(this.config.idTemplate, 'g');
         this.config.jsIdRegex = new RegExp(this.config.jsIdTemplate, 'g');
         this.config.orderRegex = new RegExp(this.config.orderTemplate, 'g');
@@ -1197,10 +1240,11 @@ blcg.Grid.Config.prototype = {
     
     initElements: function()
     {
-        this.container = $(this.containerId);
-        this.table     = $(this.containerId + '-table');
-        this.rows      = $(this.containerId + '-table-rows');
-        this.count     = $(this.containerId + '-count');
+        this.container   = $(this.containerId);
+        this.table       = $(this.containerId + '-table');
+        this.rows        = $(this.containerId + '-table-rows');
+        this.count       = $(this.containerId + '-count');
+        this.filterCount = $(this.containerId + '-filter-count');
         
         if (this.config.useDnd) {
             // Drag'n'drop if needed
@@ -1308,27 +1352,11 @@ blcg.Grid.Config.prototype = {
         this.columns[nextId] = row;
         this.columnsIds.push(nextId);
         
-        row.getElementsBySelector('.visible-checkbox').each(function(cb){
-            cb.observe('click', function(){
-                if (cb.checked) {
-                    this.checkedValues.push(nextId);
-                } else {
-                    var i = this.checkedValues.indexOf(nextId);
-                    if (i != -1) {
-                        this.checkedValues.splice(i, 1);
-                    }
-                } 
-                this.updateCount(); 
-            }.bind(this));
-            
-            this.checkboxes[nextId] = cb;
-            
-            if (cb.checked) {
-                this.checkedValues.push(nextId);
-            }
-        }.bind(this));
-        this.orderInputs[nextId] = $(this.orderInputId.replace(this.config.idRegex, nextId));
+        var visibleCb = row.getElementsBySelector('.visible-checkbox').first();
+        var filterCb  = row.getElementsBySelector('.filter-only-checkbox').first();
+        this.prepareColumnCheckboxes(nextId, visibleCb, filterCb);
         
+        this.orderInputs[nextId] = $(this.orderInputId.replace(this.config.idRegex, nextId));
         this.updateCount();
         this.redecorateColumns();
         
@@ -1359,41 +1387,102 @@ blcg.Grid.Config.prototype = {
         }.bind(this));
     },
     
+    onVisibleCheckboxClick: function(visibleCb, filterCb, columnId, fromFilter)
+    {
+        if (visibleCb.checked) {
+            this.checkedValues.push(columnId);
+        } else {
+            var i = this.checkedValues.indexOf(columnId);
+            
+            if (i != -1) {
+                this.checkedValues.splice(i, 1);
+            }
+            
+            if (!fromFilter && filterCb) {
+                filterCb.checked = false;
+                this.onFilterCheckboxClick(filterCb, visibleCb, columnId, true);
+            }
+        }
+        if (!fromFilter) {
+            this.updateCount();
+        }
+    },
+    
+    onFilterCheckboxClick: function(filterCb, visibleCb, columnId, fromVisible)
+    {
+        if (filterCb.checked) {
+            this.checkedFilterValues.push(columnId);
+            
+            if (!fromVisible) {
+                visibleCb.checked = true;
+                this.onVisibleCheckboxClick(visibleCb, filterCb, columnId, true);
+            }
+        } else {
+            var i = this.checkedFilterValues.indexOf(columnId);
+            
+            if (i != -1) {
+                this.checkedFilterValues.splice(i, 1);
+            }
+        }
+        if (!fromVisible) {
+            this.updateCount();
+        }
+    },
+    
+    prepareColumnCheckboxes: function(columnId, visibleCb, filterCb)
+    {
+        if (visibleCb) {
+            this.checkboxes[columnId] = visibleCb;
+            
+            visibleCb.observe('click', function(){
+                this.onVisibleCheckboxClick(visibleCb, filterCb, columnId);
+            }.bind(this));
+            
+            if (visibleCb.checked) {
+                this.checkedValues.push(columnId);
+            }
+        }
+        if (filterCb) {
+            this.filterCheckboxes[columnId] = filterCb;
+            
+            if (visibleCb) {
+                filterCb.observe('click', function(){
+                    this.onFilterCheckboxClick(filterCb, visibleCb, columnId);
+                }.bind(this));
+            }
+            
+            if (filterCb.checked) {
+                this.checkedFilterValues.push(columnId);
+            }
+        }
+    },
+    
     initCheckboxes: function()
     {
         this.columnsIds.each(function(columnId){
             var column = this.columns[columnId];
-            column.getElementsBySelector('.visible-checkbox').each(function(cb){
-                cb.observe('click', function(){
-                    if (cb.checked) {
-                        this.checkedValues.push(columnId);
-                    } else {
-                        var i = this.checkedValues.indexOf(columnId);
-                        if (i != -1) {
-                            this.checkedValues.splice(i, 1);
-                        }
-                    } 
-                    this.updateCount(); 
-                }.bind(this));
-                
-                this.checkboxes[columnId] = cb;
-                
-                if (cb.checked) {
-                    this.checkedValues.push(columnId);
-                }
-            }.bind(this));
+            var visibleCb = column.getElementsBySelector('.visible-checkbox').first();
+            var filterCb  = column.getElementsBySelector('.filter-only-checkbox').first();
+            this.prepareColumnCheckboxes(columnId, visibleCb, filterCb);
         }.bind(this));
     },
     
     updateCount: function()
     {
         this.checkedValues = this.checkedValues.uniq();
+        this.checkedFilterValues = this.checkedFilterValues.uniq();
         this.count.update(this.checkedValues.size());
+        this.filterCount.update(this.checkedFilterValues.size());
     },
     
     selectAll: function()
     {
-        this.columnsIds.each(function(columnId){ this.checkboxes[columnId].checked = true; }.bind(this));
+        this.columnsIds.each(function(columnId){
+            if (!!this.checkboxes[columnId]) {
+                this.checkboxes[columnId].checked = true;
+            }
+        }.bind(this));
+        
         this.checkedValues = this.columnsIds;
         this.updateCount();
         return false;
@@ -1401,8 +1490,17 @@ blcg.Grid.Config.prototype = {
     
     unselectAll: function()
     {
-        this.columnsIds.each(function(columnId){ this.checkboxes[columnId].checked = false; }.bind(this));
+        this.columnsIds.each(function(columnId){
+            if (!!this.checkboxes[columnId]) {
+                this.checkboxes[columnId].checked = false;
+            }
+            if (!!this.filterCheckboxes[columnId]) {
+                this.filterCheckboxes[columnId].checked = false;
+            }
+        }.bind(this));
+        
         this.checkedValues = $A({});
+        this.checkedFilterValues = $A({});
         this.updateCount();
         return false;
     },
@@ -1410,24 +1508,31 @@ blcg.Grid.Config.prototype = {
     deleteColumn: function(columnId)
     {
         columnId = '' + columnId;
-        var i = this.columnsIds.indexOf(columnId);
+        var i = this.columnsIds.indexOf(columnId), j;
+        
         if (i != -1) {
             this.columns[columnId].remove();
             this.columnsIds.splice(i, 1);
             this.columns.unset(columnId);
             this.checkboxes.unset(columnId);
-            var j = this.checkedValues.indexOf(columnId);
-            if (j != -1) {
+            this.filterCheckboxes.unset(columnId);
+            
+            if ((j = this.checkedValues.indexOf(columnId)) != -1) {
                 this.checkedValues.splice(j, 1);
-                this.updateCount();
             }
+            if ((j = this.checkedFilterValues.indexOf(columnId)) != -1) {
+                this.checkedFilterValues.splice(j, 1);
+            }
+            
+            this.updateCount();
             this.redecorateColumns();
         }
     },
     
     saveGrid: function()
     {
-        if (this.checkedValues.size() == 0) {
+        if ((this.checkedValues.size() == 0)
+            || (this.checkedValues.size() == this.checkedFilterValues.size())) {
             if (this.config.errorText != '') {
                 alert(this.config.errorText);
             }
@@ -1435,7 +1540,158 @@ blcg.Grid.Config.prototype = {
         }
         return blcg.Tools.submitContainerValues(this.container, this.saveUrl);
     }
-}
+};
+
+blcg.Grid.ActionsPinner = Class.create();
+blcg.Grid.ActionsPinner.prototype = {
+    initialize: function(containerId, gridTableId)
+    {
+        this.container   = $(containerId);
+        this.gridTable   = $(gridTableId);
+        this.pinnedBlock = this.container.select('.blcg-grid-pinnable-actions-block').first();
+        
+        if (!this.pinnedBlock || this.pinnedBlock.empty()) {
+            return;
+        }
+        
+        this.pinnedPlaceholder = this.container.select('.blcg-grid-pinned-actions-block-placeholder').first();
+        this.isVisible   = true;
+        this.isPinned    = false;
+        this.isWorking   = false;
+        this.pinPosition = 0;
+        this.pinnedPartHeight = 0;
+        
+        if (this.pinnedBlock && this.pinnedPlaceholder) {
+            var onScrollHandler = this.onScroll.bind(this);
+            blcgEventsManager.addUniqueHandler('blcg-gap-'+containerId+'-load',   'prototype', window, 'load',   onScrollHandler);
+            blcgEventsManager.addUniqueHandler('blcg-gap-'+containerId+'-scroll', 'prototype', window, 'scroll', onScrollHandler);
+            blcgEventsManager.addUniqueHandler('blcg-gap-'+containerId+'-resize', 'prototype', window, 'resize', onScrollHandler);
+            
+            var onTabShowHandler = function(tab){ this.onTabShow(tab.tab); }.bind(this);
+            var onTabHideHandler = function(tab){ this.onTabHide(tab.tab); }.bind(this);
+            blcgEventsManager.addUniqueHandler('blcg-gap-'+containerId+'-tab-show', 'varien', null, 'showTab', onTabShowHandler);
+            blcgEventsManager.addUniqueHandler('blcg-gap-'+containerId+'-tab-hide', 'varien', null, 'hideTab', onTabHideHandler);
+        }
+        
+        this.onScroll();
+    },
+    
+    getFixedHeaderHeight: function()
+    {
+        var fixedHeader = $$('.content-header-floating').first();
+        return (fixedHeader && fixedHeader.visible() ? fixedHeader.getHeight() : 0);
+    },
+    
+    pin: function()
+    {
+        if (this.isPinned || this.isWorking) {
+            this.checkPosition();
+            return;
+        }
+        
+        this.isWorking   = true;
+        this.isPinned    = true;
+        this.pinPosition = this.getFixedHeaderHeight();
+        
+        if (this.pinnedBlock) {
+            this.pinnedBlock.select('.blcg-additional-filters-table').invoke('addClassName', 'no-display');
+            
+            this.pinnedBlock.setStyle({
+                'position': 'fixed',
+                'left': 0,
+                'top': this.pinPosition + 'px',
+                'width': '100%'
+            });
+            
+            this.pinnedBlock.addClassName('blcg-grid-pinned-actions-block'); 
+            this.pinnedPartHeight = this.pinnedBlock.getHeight();
+        }
+        
+        this.pinnedPlaceholder.setStyle({'height': this.pinnedPartHeight + 'px'});
+        this.isWorking = false;
+    },
+    
+    unPin: function()
+    {
+        if (!this.isPinned || this.isWorking) {
+            return;
+        }
+        
+        this.isWorking   = true;
+        this.isPinned    = false;
+        this.pinPosition = 0;
+        this.pinnedPartHeight = 0;
+        
+        if (this.pinnedBlock) {
+            this.pinnedBlock.select('.blcg-additional-filters-table').invoke('removeClassName', 'no-display');
+            this.pinnedBlock.removeClassName('blcg-grid-pinned-actions-block');
+            this.pinnedPlaceholder.setStyle({'height': '0'});
+            this.pinnedBlock.writeAttribute('style', '');
+        }
+        
+        this.isWorking = false;
+    },
+    
+    onTabShow: function(tab)
+    {
+        if (!this.isVisible
+            && (tab = $(tab.id + '_content'))
+            && this.container.descendantOf(tab)) {
+            this.isVisible = true;
+            this.onScroll();
+        }
+    },
+
+    onTabHide: function(tab)
+    {
+        if (this.isVisible
+            && (tab = $(tab.id + '_content'))
+            && this.container.descendantOf(tab)) {
+            this.isVisible = false;
+            this.unPin();
+        }
+    },
+    
+    checkPosition: function()
+    {
+        if (!this.isPinned || this.isWorking) {
+            return;
+        }
+        
+        this.isWorking  = true;
+        this.pinnedPartHeight = this.pinnedBlock.getHeight();
+        var newPosition = this.getFixedHeaderHeight();
+        
+        if (newPosition != this.pinPosition) {
+            this.pinPosition = newPosition;
+            this.pinnedBlock.setStyle({'top': newPosition + 'px'});
+        }
+        
+        this.isWorking = false;
+    },
+    
+    onScroll: function()
+    {
+        if (this.isWorking || !this.isVisible) {
+            return;
+        }
+        
+        var tableHeight = this.gridTable.getHeight();
+        
+        if (tableHeight > 0) {
+            var tableTop = this.gridTable.viewportOffset().top,
+                headerHeight = this.getFixedHeaderHeight();
+            
+            if (tableTop+tableHeight+this.pinnedPartHeight < headerHeight) {
+                this.unPin();
+            } else if (tableTop-headerHeight-this.pinnedPartHeight < 0) {
+                this.pin();
+            } else {
+                this.unPin();
+            }
+        }
+    }
+};
 
 blcg.Grid.Editor = Class.create();
 blcg.Grid.Editor.prototype = {
@@ -1536,7 +1792,7 @@ blcg.Grid.Editor.prototype = {
     getCellOverlay: function(cell)
     {
         var overlay = $(this.getCellOverlayId(cell));
-        return (overlay ? overlay : this.createCellOverlay(cell));       
+        return (overlay ? overlay : this.createCellOverlay(cell));
     },
     
     positionCellOverlay: function(cell, overlay, mustShow)
@@ -1786,17 +2042,47 @@ blcg.Grid.Editor.prototype = {
                                         e.hide();
                                         cell.addClassName('blcg-column-editor-editing-required');
                                     });
+                                    
+                                    // add Editor support for Enter / Escape keys
+                                    var formInputs = $(form).select('.select, .required-entry, .input-text');
+                                    
+                                    formInputs.each(function(input){
+                                        input.observe('keydown', function(e){
+                                            switch (e.keyCode) {
+                                                case Event.KEY_RETURN: // Enter completes edit
+                                                    e.preventDefault();
+                                                    editor.validateEdit();
+                                                    break;
+                                                
+                                                case Event.KEY_ESC: // Escape cancels edit
+                                                    e.preventDefault();
+                                                    editor.cancelEdit();
+                                                    break;
+                                            }
+                                        });
+                                    });
+                                    
+                                    // automatically focus Editor when commencing edit
+                                    formInputs.first().activate();
                                 }
                             } else {
                                 editor.cancelEdit();
-                                if (transport.responseText != '') {
+                                
+                                if (!transport.responseText.isJSON()
+                                    && (transport.responseText != '')) {
                                     alert(transport.responseText);
+                                } else {
+                                    // @todo generic error message
                                 }
                             }
                         } catch(e) {
                             editor.cancelEdit();
-                            if (transport.responseText != '') {
+                            
+                            if (!transport.responseText.isJSON()
+                                && (transport.responseText != '')) {
                                 alert(transport.responseText);
+                            } else {
+                                // @todo generic error message
                             }
                         }
                         
@@ -1892,14 +2178,22 @@ blcg.Grid.Editor.prototype = {
                                 }
                             } else {
                                 editor.cancelEdit();
-                                if (transport.responseText != '') {
+                                
+                                if (!transport.responseText.isJSON()
+                                    && (transport.responseText != '')) {
                                     alert(transport.responseText);
+                                } else {
+                                    // @todo generic error message
                                 }
                             }
                         } catch(e) {
                             editor.cancelEdit();
-                            if (transport.responseText != '') {
+                            
+                            if (!transport.responseText.isJSON()
+                                && (transport.responseText != '')) {
                                 alert(transport.responseText);
+                            } else {
+                                // @todo generic error message
                             }
                         }
                         
@@ -1916,6 +2210,7 @@ blcg.Grid.Editor.prototype = {
                 });
             } else {
                 this.cancelEdit();
+                
                 if (this.errorMessages.get('save_no_params')) {
                     alert(this.errorMessages.get('save_no_params'));
                 }
@@ -1925,6 +2220,9 @@ blcg.Grid.Editor.prototype = {
     
     cancelEdit: function(fromDialog, errorMessage)
     {
+        if (this.isRequestRunning) {
+            return;
+        }
         if (this.editedCell) {
             if (this.hasPreviousValue) {
                 this.editedCell.innerHTML = this.previousValue;
@@ -1947,7 +2245,7 @@ blcg.Grid.Editor.prototype = {
             }
         }
     }
-}
+};
 
 if (typeof(blcg.CustomColumn) == 'undefined') {
     blcg.CustomColumn = {};
@@ -1958,7 +2256,8 @@ blcg.CustomColumn.List.prototype = {
     initialize: function(wrapperId, config)
     {
         this.wrapper = $(wrapperId);
-        this.config  = Object.extend({
+        
+        this.config = Object.extend({
             groupClass: 'blcg-custom-columns-group',
             labelClass: 'blcg-custom-columns-group-label',
             labelOnClass: 'blcg-custom-columns-group-label-on',
@@ -2002,6 +2301,74 @@ blcg.CustomColumn.List.prototype = {
     }
 } 
 
+blcg.MessagesTabs = Class.create();
+blcg.MessagesTabs.prototype = {
+    initialize: function(wrapperId, types, config)
+    {
+        this.wrapper = $(wrapperId);
+        this.types = $A(types);
+        
+        this.config = Object.extend({
+            tabIdPrefix: 'blcg-messages-tab-',
+            countIdPrefix: 'blcg-messages-tab-count-',
+            wrapperIdPrefix: 'blcg-messages-list-wrapper-',
+            tabClass: 'blcg-messages-tab',
+            wrapperClass: 'blcg-messages-list-wrapper',
+            hiddenClass: 'no-display',
+            messageSelector: '.messages li li'
+        }, config || {});
+        
+        this.types.each(function(type){
+            $(this.config.tabIdPrefix + type).observe('click', this.toggleMessages.bind(this, type, false));
+        }.bind(this));
+    },
+    
+    hideMessages: function()
+    {
+        $$('.' + this.config.wrapperClass).invoke('addClassName', this.config.hiddenClass);
+    },
+    
+    showMessages: function(type)
+    {
+        this.hideMessages();
+        $(this.config.wrapperIdPrefix + type).removeClassName(this.config.hiddenClass);
+    },
+    
+    toggleMessages: function(type, closeOnly)
+    {
+        if ($(this.config.wrapperIdPrefix + type).hasClassName(this.config.hiddenClass)) {
+            if (!closeOnly) {
+                this.showMessages(type);
+            }
+        } else {
+            this.hideMessages();
+        }
+    },
+    
+    addMessages: function(wrapperId)
+    {
+        var newWrapper = $(wrapperId);
+        
+        this.types.each(function(type){
+            var mainWrapper = $(this.config.wrapperIdPrefix + type),
+                subWrapper  = newWrapper.select('.' + this.config.wrapperIdPrefix + type).first();
+            
+            if (subWrapper) {
+                mainWrapper.insert({top: subWrapper.down()});
+                var count = mainWrapper.select(this.config.messageSelector).size();
+                $(this.config.countIdPrefix + type).update('' + count);
+                
+                if (count > 0) {
+                    $(this.config.tabIdPrefix + type).removeClassName(this.config.hiddenClass);
+                } else {
+                    $(this.config.tabIdPrefix + type).addClassName(this.config.hiddenClass);
+                    this.toggleMessages(type, true);
+                }
+            }
+        }.bind(this));
+    }
+};
+
 blcg.CustomColumn.Form = Class.create(blcg.Config);
 
 blcg.CustomColumn.Config = Class.create();
@@ -2037,7 +2404,7 @@ blcg.CustomColumn.OptionsColor.registerRowChange = function(childId, backgroundC
             });
         }
     }
-}
+};
 
 if (typeof(blcg.Filter) == 'undefined') {
     blcg.Filter = {};
@@ -2074,4 +2441,4 @@ blcg.Filter.Categories.prototype = {
             blcg.Tools.closeDialog(this.window);
         }
     }
-}
+};

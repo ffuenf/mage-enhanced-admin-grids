@@ -14,15 +14,18 @@
  */
 ?>
 <?php
-    $_helper    = $this->helper('customgrid');
-    $_gridModel = $this->getGridModel();
+    $_htmlId = $this->getHtmlId();
+    $_helper = $this->helper('customgrid');
+    $_stringHelper = $this->helper('customgrid/string');
+    $_gridModel    = $this->getGridModel();
     $_columnAlignments = $_gridModel->getColumnAlignments();
     $_columnOrigins    = $_gridModel->getColumnOrigins();
 ?>
-<div id="<?php echo $this->getHtmlId() ?>-grid" class="grid">
+<div id="<?php echo $_htmlId ?>-grid" class="grid">
     <div class="hor-scroll">
-        <table id="<?php echo $this->getHtmlId() ?>-table" class="data" cellspacing="0">
+        <table id="<?php echo $_htmlId ?>-table" class="data" cellspacing="0">
             <?php if ($this->getUseDragNDrop()): ?><col width="20" /><?php endif ?>
+            <col class="a-center" width="50" />
             <col class="a-center" width="50" />
             <?php if ($this->canDisplayEditablePart()): ?>
                 <col class="a-center" width="50" />
@@ -43,6 +46,7 @@
                 <tr class="headings nodrop">
                     <?php if ($this->getUseDragNDrop()): ?><th></th><?php endif ?>
                     <th><span class="nobr"><?php echo $this->__('Visible') ?></span></th>
+                    <th><span class="nobr"><?php echo $this->__('Filter') ?></span></th>
                     <?php if ($this->canDisplayEditablePart()): ?>
                         <th><span class="nobr"><?php echo $this->__('Editable') ?></span></th>
                     <?php endif ?>
@@ -60,7 +64,7 @@
                     <th><span class="nobr"><?php echo $this->__('Actions') ?></span></th>
                 </tr>
             </thead>
-            <tbody id="<?php echo $this->getHtmlId() ?>-table-rows">
+            <tbody id="<?php echo $_htmlId ?>-table-rows">
             <?php $_i = 0; ?>
             
             <?php
@@ -79,8 +83,7 @@
             
             <?php foreach ($_columns as $_columnId => $_column): ?>
                 <?php
-                    $_dbId   = $_column['column_id'];
-                    $_htmlId = $this->getHtmlId();
+                    $_dbId = $_column['column_id'];
                     $_fromGrid       = $_gridModel->isGridColumnOrigin($_column['origin']);
                     $_fromCollection = $_gridModel->isCollectionColumnOrigin($_column['origin']);
                     $_fromAttribute  = $_gridModel->isAttributeColumnOrigin($_column['origin']);
@@ -106,6 +109,9 @@
                     <?php endif ?>
                     <td class="a-center">
                         <input name="config[<?php echo $_dbId ?>][is_visible]" id="visible-checkbox-<?php echo $_dbId ?>" class="visible-checkbox" type="checkbox" value="1" <?php if ($_column['is_visible']): ?>checked="checked"<?php endif ?> />
+                    </td>
+                    <td class="a-center">
+                        <input name="config[<?php echo $_dbId ?>][filter_only]" id="filter-only-checkbox-<?php echo $_dbId ?>" class="filter-only-checkbox" type="checkbox" value="1" <?php if ($_column['filter_only']): ?>checked="checked"<?php endif ?> />
                     </td>
                     <?php if ($_canDisplayEditablePart): ?>
                         <td class="a-center" id="column-editable-infos-<?php echo $_dbId ?>">
@@ -136,14 +142,14 @@
                             <?php if ($_column['missing']): ?>
                                 <em><?php echo $this->htmlEscape($_column['index']) ?></em>
                             <?php else: ?>
-                                <input type="hidden" id="<?php echo $_htmlId ?>-renderer-params-<?php echo $_dbId ?>" name="config[<?php echo $_dbId ?>][renderer_params]" value="<?php echo $this->htmlEscape($_column['renderer_params']) ?>" />
+                                <input type="hidden" id="<?php echo $_htmlId ?>-renderer-params-<?php echo $_dbId ?>" name="config[<?php echo $_dbId ?>][renderer_params]" value="<?php echo $_stringHelper->htmlDoubleEscape($_column['renderer_params']) ?>" />
                                 <?php echo $this->getAttributesSelectHtml($_dbId, 'config['.$_dbId.'][index]', $_htmlId.'-renderer-params-'.$_dbId, ($_canChooseEditableColumns ? 'column-editable-infos-'.$_dbId : false), 'editable-checkbox-'.$_dbId, $_column['index'], false) ?>
                             <?php endif ?>
                         <?php else: ?>
                             <div class="nobr">
                                 <?php echo $_column['index'] ?>
                                 <?php if ($_fromCustom && $_hasCustomColumn && $_customColumn->getAllowCustomization()): ?>
-                                    <input type="hidden" id="<?php echo $_htmlId ?>-custom-params-<?php echo $_dbId ?>" name="config[<?php echo $_dbId ?>][custom_params]" value="<?php echo $this->htmlEscape($_column['custom_params']) ?>" />
+                                    <input type="hidden" id="<?php echo $_htmlId ?>-custom-params-<?php echo $_dbId ?>" name="config[<?php echo $_dbId ?>][custom_params]" value="<?php echo $_stringHelper->htmlDoubleEscape($_column['custom_params']) ?>" />
                                     <span class="blcg-custom-column-config-button" id="<?php echo $_htmlId ?>-custom-button-<?php echo $_dbId ?>" title="<?php echo $this->__('Configuration') ?>"></span>
                                     <script type="text/javascript">
                                         new blcg.CustomColumn.Config('<?php echo $_column['index'] ?>', '<?php echo $_htmlId ?>-custom-button-<?php echo $_dbId ?>', '<?php echo $_htmlId ?>-custom-params-<?php echo $_dbId ?>', '<?php echo $this->getCustomColumnConfigUrl() ?>', <?php echo $this->helper('core')->jsonEncode($_customColumn->getCustomParamsWindowConfig()) ?>);
@@ -171,7 +177,7 @@
                                 endif;
                                 $_rendererParams = (!$_lockedRenderer || ($_rendererType == $_column['renderer_type']) ? $_column['renderer_params'] : '');
                             ?>
-                            <input type="hidden" id="<?php echo $_htmlId ?>-renderer-params-<?php echo $_dbId ?>" name="config[<?php echo $_dbId ?>][renderer_params]" value="<?php echo $this->htmlEscape($_rendererParams) ?>" />
+                            <input type="hidden" id="<?php echo $_htmlId ?>-renderer-params-<?php echo $_dbId ?>" name="config[<?php echo $_dbId ?>][renderer_params]" value="<?php echo $_stringHelper->htmlDoubleEscape($_rendererParams) ?>" />
                             <?php echo $this->getCollectionRendererSelectHtml($_dbId, 'config['.$_dbId.'][renderer_type]', $_htmlId.'-renderer-params-'.$_dbId, $_rendererType, $_lockedRenderer, $_lockedLabel) ?>
                         <?php endif ?>
                     </td>
@@ -245,6 +251,7 @@
     [
         <?php if ($this->getUseDragNDrop()): ?>{template: '&nbsp;', classNames: ['blcg-drag-handle']},<?php endif ?>
         {template: '<input name="config[{{id}}][is_visible]" id="visible-checkbox-{{id}}" value="1" class="visible-checkbox" type="checkbox" checked="checked" />', classNames: ['a-center']},
+        {template: '<input name="config[{{id}}][filter_only]" id="filter-only-checkbox-{{id}}" value="1" class="filter-only-checkbox" type="checkbox" />', classNames: ['a-center']},
         <?php if ($this->canDisplayEditablePart()): ?>
         {template: '<?php if ($this->canChooseEditableColumns()): ?><input name="config[{{id}}][editable]" disabled="disabled" id="editable-checkbox-{{id}}" class="editable-checkbox" type="checkbox" value="1" checked="checked" /><?php else: ?><span class="nobr"><?php echo $this->jsQuoteEscape($this->__('Yes')) ?></span><?php endif ?>', id: 'column-editable-infos-{{id}}', classNames: ['a-center']},
         <?php endif ?>

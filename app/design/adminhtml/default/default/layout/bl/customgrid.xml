@@ -22,15 +22,27 @@
             <!-- Some needed elements from editor handle -->
             <action method="addJs"><script>prototype/window.js</script></action>
             <action method="addItem"><type>js_css</type><name>prototype/windows/themes/default.css</name></action>
-            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/magento.css</name></action>
         </reference>
         
         <reference name="before_body_end">
             <block type="customgrid/column_renderer_collection_select" name="customgrid.column_collection_renderers_descriptions">
                 <action method="setTemplate"><template>bl/customgrid/column/renderer/collection/descriptions.phtml</template></action>
             </block>
+            <block type="customgrid/messages" name="customgrid.messages" />
         </reference>
     </default>
+    
+    <blcg_magento_version_to_16>
+        <reference name="head">
+            <action method="addItem"><type>js_css</type><name>prototype/windows/themes/magento.css</name></action>
+        </reference>
+    </blcg_magento_version_to_16>
+    
+    <blcg_magento_version_from_17>
+        <reference name="head">
+            <action method="addCss"><name>lib/prototype/windows/themes/magento.css</name></action>
+        </reference> 
+    </blcg_magento_version_from_17>
     
     <customgrid_custom_grid_index>
         <reference name="content">
